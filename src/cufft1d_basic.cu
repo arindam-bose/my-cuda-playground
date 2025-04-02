@@ -10,13 +10,12 @@
 
 void run_test_cufft_1d(int argc, char** argv) {
     // Declaration
-    int i;
     float *samples;
     cufftComplex *complex_samples;
     cufftComplex *complex_freq;
     cufftComplex *d_complex_samples;
     cufftComplex *d_complex_freq;
-    cufftHandle plan = 0;
+    cufftHandle plan;
 
     // Allocate memory for the variables on the host
     samples = (float *)malloc(sizeof(float) * N);
@@ -25,12 +24,12 @@ void run_test_cufft_1d(int argc, char** argv) {
 
     // Input signal generation using cos(x)
     double delta = M_PI / 20.0;
-    for (i = 0; i < N; i++) {
+    for (unsigned int i = 0; i < N; i++) {
         samples[i] = cos(i * delta);
     }
 
     // Convert to a complex signal
-    for (i = 0; i < N; i++) {
+    for (unsigned int i = 0; i < N; i++) {
         complex_samples[i].x = samples[i];
         complex_samples[i].y = 0;
     }
@@ -38,11 +37,11 @@ void run_test_cufft_1d(int argc, char** argv) {
     // Print input stuff
     if (PRINT_FLAG) {
         printf("Real data...\n");
-        for (i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; i++) {
             printf("  %2.4f\n", samples[i]);
         }
         printf("Complex data...\n");
-        for (i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; i++) {
             printf("  %2.4f + i%2.4f\n", complex_samples[i].x, complex_samples[i].y);
         }
     }
@@ -66,7 +65,7 @@ void run_test_cufft_1d(int argc, char** argv) {
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
-        for (i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; i++) {
             printf("  %2.4f + i%2.4f\n", complex_freq[i].x, complex_freq[i].y);
         }
     }

@@ -10,7 +10,6 @@
 
 void run_test_fft_1d(int argc, char** argv) {
     // Declaration
-    int i;
     float *samples;
     fftw_complex *complex_samples;
     fftw_complex *complex_freq;
@@ -23,12 +22,12 @@ void run_test_fft_1d(int argc, char** argv) {
 
     // Input signal generation using cos(x)
     double delta = M_PI / 20.0;
-    for (i = 0; i < N; i++) {
+    for (unsigned int i = 0; i < N; i++) {
         samples[i] = cos(i * delta);
     }
 
     // Convert to a complex signal
-    for (i = 0; i < N; i++) {
+    for (unsigned int i = 0; i < N; i++) {
         complex_samples[i][0] = samples[i];
         complex_samples[i][1] = 0;
     }
@@ -36,11 +35,11 @@ void run_test_fft_1d(int argc, char** argv) {
     // Print input stuff
     if (PRINT_FLAG) {
         printf("Real data...\n");
-        for (i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; i++) {
             printf("  %2.4f\n", samples[i]);
         }
         printf("Complex data...\n");
-        for (i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; i++) {
             printf("  %2.4f + i%2.4f\n", complex_samples[i][0], complex_samples[i][1]);
         }
     }
@@ -54,7 +53,7 @@ void run_test_fft_1d(int argc, char** argv) {
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
-        for (i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; i++) {
             printf("  %2.4f + i%2.4f\n", complex_freq[i][0], complex_freq[i][1]);
         }
     }
