@@ -11,8 +11,7 @@ void run_test_fft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     srand(2025);
 
     // Declaration
-    fftw_complex *complex_samples;
-    fftw_complex *new_complex_samples;
+    fftw_complex *complex_samples, *new_complex_samples;
     fftw_complex *complex_freq;
     fftw_plan plan_fft, plan_ifft;
     

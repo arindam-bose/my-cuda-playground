@@ -11,8 +11,7 @@ void run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     srand(2025);
 
     // Declaration
-    cufftComplex *complex_samples;
-    cufftComplex *new_complex_samples;
+    cufftComplex *complex_samples, *new_complex_samples;
     cufftComplex *complex_freq;
     cufftComplex *d_complex_samples;
     cufftComplex *d_complex_freq;
