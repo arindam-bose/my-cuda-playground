@@ -28,11 +28,12 @@ void run_test_cufft_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
     cufftComplex *d_complex_samples;
     cufftComplex *d_complex_freq;
 
-    unsigned int element_size = nx * ny * nz;
+    unsigned int element_size = nx * ny * nz * nw;
+    size_t size = sizeof(cufftComplex) * element_size;
 
     // Allocate memory for the variables on the host
-    complex_samples = (cufftComplex *)malloc(sizeof(cufftComplex) * element_size);
-    complex_freq = (cufftComplex *)malloc(sizeof(cufftComplex) * element_size);
+    complex_samples = (cufftComplex *)malloc(size);
+    complex_freq = (cufftComplex *)malloc(size);
 
     // Initialize input complex signal
     for (unsigned int i = 0; i < element_size; i++) {
@@ -41,11 +42,11 @@ void run_test_cufft_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
     }
 
     // Allocate device memory for complex signal and output frequency
-    CHECK_CUDA(cudaMalloc((void **)&d_complex_samples, sizeof(cufftComplex) * element_size));
-    CHECK_CUDA(cudaMalloc((void **)&d_complex_freq, sizeof(cufftComplex) * element_size));
+    CHECK_CUDA(cudaMalloc((void **)&d_complex_samples, size));
+    CHECK_CUDA(cudaMalloc((void **)&d_complex_freq, size));
 
     // Copy host memory to device
-    CHECK_CUDA(cudaMemcpy(d_complex_samples, complex_samples, sizeof(cufftComplex) * element_size, cudaMemcpyHostToDevice));
+    CHECK_CUDA(cudaMemcpy(d_complex_samples, complex_samples, size, cudaMemcpyHostToDevice));
 
     // Perform FFT along each dimension sequentially
     execute_cufft1d(d_complex_samples, d_complex_freq, nx, ny * nz * nw, 1, nx);         // FFT along X
@@ -54,10 +55,7 @@ void run_test_cufft_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
     execute_cufft1d(d_complex_freq, d_complex_freq, nw, nx * ny * nz, nx * ny * nz, nw); // FFT along W
 
     // Retrieve the results into host memory
-    CHECK_CUDA(cudaMemcpy(complex_freq, d_complex_freq, sizeof(cufftComplex) * element_size, cudaMemcpyDeviceToHost));
-
-    CHECK_CUDA(cudaDeviceSynchronize());
-    CHECK_CUDA(cudaDeviceReset());
+    CHECK_CUDA(cudaMemcpy(complex_freq, d_complex_freq, size, cudaMemcpyDeviceToHost));
 
     // Print output stuff
     if (PRINT_FLAG) {
@@ -85,5 +83,6 @@ int main(int argc, char **argv) {
     int nz = atoi(argv[3]);
     int nw = atoi(argv[4]);
     run_test_cufft_4d(nx, ny, nz, nw);
+    CHECK_CUDA(cudaDeviceReset());
     return 0;
 }

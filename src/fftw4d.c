@@ -3,7 +3,7 @@
 #include <math.h>
 #include <fftw3.h>
 
-#define PRINT_FLAG 1
+#define PRINT_FLAG 0
 #define NPRINTS 30  // print size
 
 void run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
