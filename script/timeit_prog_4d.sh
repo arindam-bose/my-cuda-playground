@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# For NVCC
 # Create the executable
+# for NVCC
 # PROGRAM=cufft4d_4x1
 # nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
 
+# for GCC 
 PROGRAM=fftw4d
 gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
 
@@ -26,5 +27,5 @@ for ARGS in "${ARGS_LIST[@]}"
 do
     echo "Running: $EXECUTABLE $ARGS"
     $EXECUTABLE $ARGS
-    echo "---------------------------"
+    echo "---------------------------------------"
 done

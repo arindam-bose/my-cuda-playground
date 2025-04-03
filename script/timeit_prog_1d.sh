@@ -1,21 +1,39 @@
 #!/bin/bash
 
-# For NVCC
 # Create the executable
-PROGRAM=cufft4d_4x1
-# PROGRAM=fftw3d
+# for NVCC
+# PROGRAM=cufft1d
+# nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
 
-nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
-# gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
+# for GCC
+PROGRAM=fftw1d
+gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
 
 # Define argument sets (each line represents a set of arguments)
 ARGS_LIST=(
-    "16 16 16"
-    "32 32 32"
-    "64 64 64"
-    "128 128 128"
-    "256 256 256"
-    "512 512 512"
+    "64"
+    "128"
+    "256"
+    "512"
+    "1024"
+    "2048"
+    "4096"
+    "8192"
+    "16384"
+    "32768"
+    "65536"
+    "131072"
+    "262144"
+    "524288"
+    "1048576"
+    "2097152"
+    "4194304"
+    "8388608"
+    "16777216"
+    "33554432"
+    "67108864"
+    "134217728"
+    "268435456"
 )
 
 # Define the executable name
@@ -25,12 +43,6 @@ EXECUTABLE="./build/$PROGRAM"
 for ARGS in "${ARGS_LIST[@]}"
 do
     echo "Running: $EXECUTABLE $ARGS"
-    start=$( date +%s.%N )
-
     $EXECUTABLE $ARGS
-    
-    end=$( date +%s.%N )
-    runtime=$( echo "$end - $start" | bc -l )
-    echo "Elapsed time: $runtime s"
-    echo "---------------------------"
+    echo "---------------------------------------"
 done

@@ -22,8 +22,8 @@ void run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsigne
     float elapsed_time;
 
     // Allocate memory for input and output arrays
-    complex_samples = (fftw_complex*) fftw_malloc(size);
-    complex_freq = (fftw_complex*) fftw_malloc(size);
+    complex_samples = (fftw_complex *)fftw_malloc(size);
+    complex_freq = (fftw_complex *)fftw_malloc(size);
 
     // Initialize input complex signal
     for (unsigned int i = 0; i < element_size; i++) {
@@ -64,14 +64,14 @@ void run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsigne
 
 int main(int argc, char **argv) {
     if (argc != 5) {
-        printf("Error: This program requires exactly 5 command-line arguments.\n");
+        printf("Error: This program requires exactly 4 command-line arguments.\n");
         return 1;
     }
 
-    int nx = atoi(argv[1]);
-    int ny = atoi(argv[2]);
-    int nz = atoi(argv[3]);
-    int nw = atoi(argv[4]);
+    unsigned int nx = atoi(argv[1]);
+    unsigned int ny = atoi(argv[2]);
+    unsigned int nz = atoi(argv[3]);
+    unsigned int nw = atoi(argv[4]);
     run_test_fftw_4d(nx, ny, nz, nw);
     return 0;
 }

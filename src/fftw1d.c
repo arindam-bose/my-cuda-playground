@@ -1,33 +1,38 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 #include <fftw3.h>
 
-#define N   1048576  // dimension size
 #define M_PI   3.14159265358979323846  /* pi */
 #define PRINT_FLAG 0
 #define NPRINTS 30  // print size
 
-void run_test_fftw_1d(int argc, char** argv) {
+void run_test_fftw_1d(unsigned int nx) {
     // Declaration
     float *samples;
     fftw_complex *complex_samples;
     fftw_complex *complex_freq;
     fftw_plan plan;
 
+    size_t size = sizeof(fftw_complex) * nx;
+
+    clock_t start, stop;
+    float elapsed_time;
+
     // Allocate memory for input and output arrays
-    samples = (float *)malloc(sizeof(float) * N);
-    complex_samples = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-    complex_freq = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+    samples = (float *)malloc(sizeof(float) * nx);
+    complex_samples = (fftw_complex *)fftw_malloc(size);
+    complex_freq = (fftw_complex *)fftw_malloc(size);
 
     // Input signal generation using cos(x)
     double delta = M_PI / 20.0;
-    for (unsigned int i = 0; i < N; i++) {
+    for (unsigned int i = 0; i < nx; i++) {
         samples[i] = cos(i * delta);
     }
 
     // Convert to a complex signal
-    for (unsigned int i = 0; i < N; i++) {
+    for (unsigned int i = 0; i < nx; i++) {
         complex_samples[i][0] = samples[i];
         complex_samples[i][1] = 0;
     }
@@ -44,11 +49,17 @@ void run_test_fftw_1d(int argc, char** argv) {
         }
     }
 
+    // Start time
+    start = clock();
+
     // Setup the FFT plan
-    plan = fftw_plan_dft_1d(N, complex_samples, complex_freq, FFTW_FORWARD, FFTW_ESTIMATE);
+    plan = fftw_plan_dft_1d(nx, complex_samples, complex_freq, FFTW_FORWARD, FFTW_ESTIMATE);
 
     // Execute a complex-to-complex 1D FFT
     fftw_execute(plan);
+
+    // End time
+    stop = clock();
 
     // Print output stuff
     if (PRINT_FLAG) {
@@ -57,6 +68,10 @@ void run_test_fftw_1d(int argc, char** argv) {
             printf("  %2.4f + i%2.4f\n", complex_freq[i][0], complex_freq[i][1]);
         }
     }
+
+    // Compute elapsed time
+    elapsed_time = (double)(stop - start) / CLOCKS_PER_SEC;
+    printf("Elapsed time: %.6f s\n", elapsed_time);
 
     // Clean up
     fftw_destroy_plan(plan);
@@ -67,6 +82,12 @@ void run_test_fftw_1d(int argc, char** argv) {
 
 
 int main(int argc, char **argv) {
-    run_test_fftw_1d(argc, argv);
+    if (argc != 2) {
+        printf("Error: This program requires exactly 1 command-line arguments.\n");
+        return 1;
+    }
+
+    unsigned int nx = atoi(argv[1]);
+    run_test_fftw_1d(nx);
     return 0;
 }

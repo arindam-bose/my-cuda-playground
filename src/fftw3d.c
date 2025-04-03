@@ -23,9 +23,9 @@ void run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     float elapsed_time;
 
     // Allocate memory for input and output arrays
-    complex_samples = (fftw_complex*) fftw_malloc(size);
-    complex_freq = (fftw_complex*) fftw_malloc(size);
-    if (IFFT_FLAG) {new_complex_samples = (fftw_complex*) fftw_malloc(size);}
+    complex_samples = (fftw_complex *)fftw_malloc(size);
+    complex_freq = (fftw_complex *)fftw_malloc(size);
+    if (IFFT_FLAG) {new_complex_samples = (fftw_complex *)fftw_malloc(size);}
 
     // Initialize input complex signal
     for (unsigned int i = 0; i < element_size; i++) {
@@ -87,9 +87,9 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    int nx = atoi(argv[1]);
-    int ny = atoi(argv[2]);
-    int nz = atoi(argv[3]);
+    unsigned int nx = atoi(argv[1]);
+    unsigned int ny = atoi(argv[2]);
+    unsigned int nz = atoi(argv[3]);
     run_test_fftw_3d(nx, ny, nz);
     return 0;
 }

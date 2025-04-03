@@ -82,7 +82,7 @@ void run_test_cufft_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
 
     // Compute elapsed time
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
-    printf("Elapsed time: %.6f s\n", elapsed_time*1e3);
+    printf("Elapsed time: %.6f s\n", elapsed_time * 1e-3);
 
     // Clean up
     CHECK_CUDA(cudaFree(d_complex_freq));
@@ -96,14 +96,14 @@ void run_test_cufft_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
 
 int main(int argc, char **argv) {
     if (argc != 5) {
-        printf("Error: This program requires exactly 5 command-line arguments.\n");
+        printf("Error: This program requires exactly 4 command-line arguments.\n");
         return 1;
     }
 
-    int nx = atoi(argv[1]);
-    int ny = atoi(argv[2]);
-    int nz = atoi(argv[3]);
-    int nw = atoi(argv[4]);
+    unsigned int nx = atoi(argv[1]);
+    unsigned int ny = atoi(argv[2]);
+    unsigned int nz = atoi(argv[3]);
+    unsigned int nw = atoi(argv[4]);
     run_test_cufft_4d(nx, ny, nz, nw);
     CHECK_CUDA(cudaDeviceReset());
     return 0;

@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# For NVCC
 # Create the executable
+# for NVCC
 PROGRAM=cufft3d
 nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
 
+# for GCC
 # PROGRAM=fftw3d
 # gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
 
