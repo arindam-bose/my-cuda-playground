@@ -82,7 +82,7 @@ void run_test_cufft_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
 
     // Compute elapsed time
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
-    printf("Elapsed time: %.6f ms\n", elapsed_time);
+    printf("Elapsed time: %.6f s\n", elapsed_time*1e3);
 
     // Clean up
     CHECK_CUDA(cudaFree(d_complex_freq));

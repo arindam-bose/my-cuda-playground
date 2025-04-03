@@ -58,7 +58,7 @@ void run_test_fftw_1d(int argc, char** argv) {
         }
     }
 
-    // Cleanups
+    // Clean up
     fftw_destroy_plan(plan);
     fftw_free(complex_samples);
     fftw_free(complex_freq);

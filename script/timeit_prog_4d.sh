@@ -2,11 +2,11 @@
 
 # For NVCC
 # Create the executable
-PROGRAM=cufft4d_4x1
-# PROGRAM=fftw4d
+# PROGRAM=cufft4d_4x1
+# nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
 
-nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
-# gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
+PROGRAM=fftw4d
+gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
 
 # Define argument sets (each line represents a set of arguments)
 ARGS_LIST=(

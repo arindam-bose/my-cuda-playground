@@ -73,7 +73,7 @@ void run_test_cufft_1d(int argc, char** argv) {
         }
     }
 
-    // Cleanups
+    // Clean up
     CHECK_CUFFT(cufftDestroy(plan));
     CHECK_CUDA(cudaFree(d_complex_freq));
     CHECK_CUDA(cudaFree(d_complex_samples));

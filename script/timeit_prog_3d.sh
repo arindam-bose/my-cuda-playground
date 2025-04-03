@@ -3,9 +3,9 @@
 # For NVCC
 # Create the executable
 PROGRAM=cufft3d
-# PROGRAM=fftw3d
-
 nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
+
+# PROGRAM=fftw3d
 # gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
 
 # Define argument sets (each line represents a set of arguments)
