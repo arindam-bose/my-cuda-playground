@@ -6,7 +6,7 @@
 #define PRINT_FLAG 1
 #define NPRINTS 30  // print size
 
-void run_test_fft_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
+void run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
     srand(2025);
 
     // Declaration
@@ -57,6 +57,6 @@ int main(int argc, char **argv) {
     int ny = atoi(argv[2]);
     int nz = atoi(argv[3]);
     int nw = atoi(argv[4]);
-    run_test_fft_4d(nx, ny, nz, nw);
+    run_test_fftw_4d(nx, ny, nz, nw);
     return 0;
 }

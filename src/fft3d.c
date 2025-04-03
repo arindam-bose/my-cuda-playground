@@ -7,7 +7,7 @@
 #define NPRINTS 30  // print size
 #define IFFT_FLAG 0
 
-void run_test_fft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
+void run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     srand(2025);
 
     // Declaration
@@ -75,6 +75,6 @@ int main(int argc, char **argv) {
     int nx = atoi(argv[1]);
     int ny = atoi(argv[2]);
     int nz = atoi(argv[3]);
-    run_test_fft_3d(nx, ny, nz);
+    run_test_fftw_3d(nx, ny, nz);
     return 0;
 }

@@ -8,7 +8,7 @@
 #define PRINT_FLAG 0
 #define NPRINTS 30  // print size
 
-void run_test_fft_1d(int argc, char** argv) {
+void run_test_fftw_1d(int argc, char** argv) {
     // Declaration
     float *samples;
     fftw_complex *complex_samples;
@@ -67,6 +67,6 @@ void run_test_fft_1d(int argc, char** argv) {
 
 
 int main(int argc, char **argv) {
-    run_test_fft_1d(argc, argv);
+    run_test_fftw_1d(argc, argv);
     return 0;
 }

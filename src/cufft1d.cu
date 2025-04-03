@@ -1,3 +1,4 @@
+#include "../common/common.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
@@ -47,21 +48,24 @@ void run_test_cufft_1d(int argc, char** argv) {
     }
 
     // Allocate device memory for complex signal and output frequency
-    cudaMalloc((void **)&d_complex_samples, sizeof(cufftComplex) * N);
-    cudaMalloc((void **)&d_complex_freq, sizeof(cufftComplex) * N);
+    CHECK_CUDA(cudaMalloc((void **)&d_complex_samples, sizeof(cufftComplex) * N));
+    CHECK_CUDA(cudaMalloc((void **)&d_complex_freq, sizeof(cufftComplex) * N));
 
     // Copy host memory to device
-    cudaMemcpy(d_complex_samples, complex_samples, sizeof(cufftComplex) * N, cudaMemcpyHostToDevice);
+    CHECK_CUDA(cudaMemcpy(d_complex_samples, complex_samples, sizeof(cufftComplex) * N, cudaMemcpyHostToDevice));
 
     // Setup the CUFFT plan
-    cufftPlan1d(&plan, N, CUFFT_C2C, 1);
+    CHECK_CUFFT(cufftPlan1d(&plan, N, CUFFT_C2C, 1));
     
     // Execute a complex-to-complex 1D FFT
-    cufftExecC2C(plan, d_complex_samples, d_complex_freq, CUFFT_FORWARD);
+    CHECK_CUFFT(cufftExecC2C(plan, d_complex_samples, d_complex_freq, CUFFT_FORWARD));
 
     // Retrieve the results into host memory
-    cudaMemcpy(complex_freq, d_complex_freq, sizeof(cufftComplex) * N, cudaMemcpyDeviceToHost);
+    CHECK_CUDA(cudaMemcpy(complex_freq, d_complex_freq, sizeof(cufftComplex) * N, cudaMemcpyDeviceToHost));
     
+    CHECK_CUDA(cudaDeviceSynchronize());
+    CHECK_CUDA(cudaDeviceReset());
+
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
@@ -71,9 +75,9 @@ void run_test_cufft_1d(int argc, char** argv) {
     }
 
     // Cleanups
-    cufftDestroy(plan);
-    cudaFree(d_complex_freq);
-    cudaFree(d_complex_samples);
+    CHECK_CUFFT(cufftDestroy(plan));
+    CHECK_CUDA(cudaFree(d_complex_freq));
+    CHECK_CUDA(cudaFree(d_complex_samples));
     free(complex_freq);
     free(complex_samples);
     free(samples);
