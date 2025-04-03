@@ -1,5 +1,6 @@
 #include "../common/common.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <cuda_runtime.h>
 #include <cufft.h>
 
@@ -31,6 +32,9 @@ void run_test_cufft_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
     unsigned int element_size = nx * ny * nz * nw;
     size_t size = sizeof(cufftComplex) * element_size;
 
+    cudaEvent_t start, stop;
+    float elapsed_time;
+
     // Allocate memory for the variables on the host
     complex_samples = (cufftComplex *)malloc(size);
     complex_freq = (cufftComplex *)malloc(size);
@@ -40,6 +44,13 @@ void run_test_cufft_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
         complex_samples[i].x = rand() / (float)RAND_MAX;
         complex_samples[i].y = 0;
     }
+
+    // Create CUDA events
+    CHECK_CUDA(cudaEventCreate(&start));
+    CHECK_CUDA(cudaEventCreate(&stop));
+
+    // Record the start event
+    CHECK_CUDA(cudaEventRecord(start, 0));
 
     // Allocate device memory for complex signal and output frequency
     CHECK_CUDA(cudaMalloc((void **)&d_complex_samples, size));
@@ -57,6 +68,10 @@ void run_test_cufft_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
     // Retrieve the results into host memory
     CHECK_CUDA(cudaMemcpy(complex_freq, d_complex_freq, size, cudaMemcpyDeviceToHost));
 
+    // Record the stop event
+    CHECK_CUDA(cudaEventRecord(stop, 0));
+    CHECK_CUDA(cudaEventSynchronize(stop));
+
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
@@ -65,12 +80,19 @@ void run_test_cufft_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
         }
     }
 
+    // Compute elapsed time
+    CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
+    printf("Elapsed time: %.6f ms\n", elapsed_time);
+
     // Clean up
     CHECK_CUDA(cudaFree(d_complex_freq));
     CHECK_CUDA(cudaFree(d_complex_samples));
+    CHECK_CUDA(cudaEventDestroy(start));
+    CHECK_CUDA(cudaEventDestroy(stop));
     free(complex_freq);
     free(complex_samples);
 }
+
 
 int main(int argc, char **argv) {
     if (argc != 5) {

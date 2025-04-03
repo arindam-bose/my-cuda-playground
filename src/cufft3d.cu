@@ -21,6 +21,9 @@ void run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     unsigned int element_size = nx * ny * nz;
     size_t size = sizeof(cufftComplex) * element_size;
 
+    cudaEvent_t start, stop;
+    float elapsed_time;
+
     // Allocate memory for the variables on the host
     complex_samples = (cufftComplex *)malloc(size);
     complex_freq = (cufftComplex *)malloc(size);
@@ -31,6 +34,13 @@ void run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
         complex_samples[i].x = rand() / (float)RAND_MAX;
         complex_samples[i].y = 0;
     }
+
+    // Create CUDA events
+    CHECK_CUDA(cudaEventCreate(&start));
+    CHECK_CUDA(cudaEventCreate(&stop));
+
+    // Record the start event
+    CHECK_CUDA(cudaEventRecord(start, 0));
 
     // Allocate device memory for complex signal and output frequency
     CHECK_CUDA(cudaMalloc((void **)&d_complex_samples, size));
@@ -47,6 +57,10 @@ void run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
 
     // Retrieve the results into host memory
     CHECK_CUDA(cudaMemcpy(complex_freq, d_complex_freq, size, cudaMemcpyDeviceToHost));
+
+    // Record the stop event
+    CHECK_CUDA(cudaEventRecord(stop, 0));
+    CHECK_CUDA(cudaEventSynchronize(stop));
 
     if (IFFT_FLAG) {
         // Execute the inverse 3D IFFT (in-place computation)
@@ -69,11 +83,17 @@ void run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
         }
     }
 
+    // Compute elapsed time
+    CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
+    printf("Elapsed time: %.6f ms\n", elapsed_time);
+
     // Clean up
     CHECK_CUFFT(cufftDestroy(plan));
     CHECK_CUDA(cudaFree(d_complex_freq));
     CHECK_CUDA(cudaFree(d_complex_samples));
     if (IFFT_FLAG) {free(new_complex_samples);}
+    CHECK_CUDA(cudaEventDestroy(start));
+    CHECK_CUDA(cudaEventDestroy(stop));
     free(complex_freq);
     free(complex_samples);
 }
