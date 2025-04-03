@@ -1,5 +1,21 @@
-# my-cuda-playground
+# Cuda Playground
 
+## Installation
+```
+sudo install python3-virtualenv
+wget https://www.fftw.org/fftw-3.3.10.tar.gz
+tar -xvzf fftw-3.3.10.tar.gz
+cd fftw-3.3.10
+./configure
+make
+make install
+
+git clone https://github.com/arindam-bose/my-cuda-playground
+cd my-python-playground
+virtualenv venv -p /usr/bin/python3
+source venv/bin/activate
+pip install -r requirements.txt
+```
 ## Versions
 ### NVCC
 ```
@@ -16,9 +32,8 @@ Build cuda_11.4.r11.4/compiler.31964100_0
 ### FFTW
 ```FFTW 3.3.10```
 
-
-## Run NVCC
+## Run NVCC individual program
 ```nvcc -o build/module src/module.cu --ptxas-options=-v --use_fast_math -lcufft```
 
-## Run GCC
+## Run GCC individual program
 ```gcc -o build/module src/module.c  -lfftw3 -lm```
