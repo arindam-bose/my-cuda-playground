@@ -7,8 +7,9 @@
 #define M_PI   3.14159265358979323846  /* pi */
 #define PRINT_FLAG 0
 #define NPRINTS 30  // print size
+#define NITER 5 // no. of iterations
 
-void run_test_fftw_1d(unsigned int nx) {
+float run_test_fftw_1d(unsigned int nx) {
     // Declaration
     float *samples;
     fftw_complex *complex_samples;
@@ -27,12 +28,12 @@ void run_test_fftw_1d(unsigned int nx) {
 
     // Input signal generation using cos(x)
     double delta = M_PI / 20.0;
-    for (unsigned int i = 0; i < nx; i++) {
+    for (unsigned int i = 0; i < nx; ++i) {
         samples[i] = cos(i * delta);
     }
 
     // Convert to a complex signal
-    for (unsigned int i = 0; i < nx; i++) {
+    for (unsigned int i = 0; i < nx; ++i) {
         complex_samples[i][0] = samples[i];
         complex_samples[i][1] = 0;
     }
@@ -40,11 +41,11 @@ void run_test_fftw_1d(unsigned int nx) {
     // Print input stuff
     if (PRINT_FLAG) {
         printf("Real data...\n");
-        for (unsigned int i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; ++i) {
             printf("  %2.4f\n", samples[i]);
         }
         printf("Complex data...\n");
-        for (unsigned int i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; ++i) {
             printf("  %2.4f + i%2.4f\n", complex_samples[i][0], complex_samples[i][1]);
         }
     }
@@ -64,30 +65,44 @@ void run_test_fftw_1d(unsigned int nx) {
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
-        for (unsigned int i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; ++i) {
             printf("  %2.4f + i%2.4f\n", complex_freq[i][0], complex_freq[i][1]);
         }
     }
 
     // Compute elapsed time
     elapsed_time = (double)(stop - start) / CLOCKS_PER_SEC;
-    printf("%.6f\n", elapsed_time);
+    // printf("%.6f\n", elapsed_time);
 
     // Clean up
     fftw_destroy_plan(plan);
     fftw_free(complex_samples);
     fftw_free(complex_freq);
     free(samples);
+
+    return elapsed_time;
 }
 
 
 int main(int argc, char **argv) {
     if (argc != 2) {
         printf("Error: This program requires exactly 1 command-line arguments.\n");
-        return 1;
+        printf("       %s <arg0>\n", argv[0]);
+        printf("       arg0: FFT length in 1D\n");
+        printf("       e.g.: %s 64\n", argv[0]);
+        return -1;
     }
 
     unsigned int nx = atoi(argv[1]);
-    run_test_fftw_1d(nx);
+
+    float sum = 0.0;
+    float item = 0.0; 
+    for (unsigned int i = 0; i < NITER; ++i) {
+        item = run_test_fftw_1d(nx); 
+        printf("%d: %f\n", i, item);
+        sum += item;
+    }
+    printf("%.6f\n", sum/(float)NITER);
+
     return 0;
 }

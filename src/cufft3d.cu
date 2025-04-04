@@ -7,8 +7,9 @@
 #define PRINT_FLAG 0
 #define NPRINTS 30  // print size
 #define IFFT_FLAG 0
+#define NITER 5 // no. of iterations
 
-void run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
+float run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     srand(2025);
 
     // Declaration
@@ -30,7 +31,7 @@ void run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     if (IFFT_FLAG) {new_complex_samples = (cufftComplex *)malloc(size);}
 
     // Initialize input complex signal
-    for (unsigned int i = 0; i < element_size; i++) {
+    for (unsigned int i = 0; i < element_size; ++i) {
         complex_samples[i].x = rand() / (float)RAND_MAX;
         complex_samples[i].y = 0;
     }
@@ -38,7 +39,7 @@ void run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     // Print input stuff
     if (PRINT_FLAG) {
         printf("Complex data...\n");
-        for (unsigned int i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; ++i) {
             printf("  %2.4f + i%2.4f\n", complex_samples[i].x, complex_samples[i].y);
         }
     }
@@ -78,7 +79,7 @@ void run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
         CHECK_CUDA(cudaMemcpy(new_complex_samples, d_complex_samples, size, cudaMemcpyDeviceToHost));
 
         // Normalize
-        for (unsigned int i = 0; i < element_size; i++) {
+        for (unsigned int i = 0; i < element_size; ++i) {
             new_complex_samples[i].x /= (float)element_size;
             new_complex_samples[i].y /= (float)element_size;
         }
@@ -86,14 +87,14 @@ void run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
 
     if (PRINT_FLAG && IFFT_FLAG) {
         printf("Complex samples after FFT and IFFT...\n");
-        for (unsigned int i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; ++i) {
             printf("  %2.4f + i%2.4f -> %2.4f + i%2.4f\n", complex_samples[i].x, complex_samples[i].y, new_complex_samples[i].x, new_complex_samples[i].y);
         }
     }
 
     // Compute elapsed time
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
-    printf("%.6f\n", elapsed_time * 1e-3);
+    // printf("%.6f\n", elapsed_time * 1e-3);
 
     // Clean up
     CHECK_CUFFT(cufftDestroy(plan));
@@ -104,13 +105,18 @@ void run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     CHECK_CUDA(cudaEventDestroy(stop));
     free(complex_freq);
     free(complex_samples);
+
+    return elapsed_time * 1e-3;
 }
 
 
 int main(int argc, char **argv) {
     if (argc != 4) {
         printf("Error: This program requires exactly 3 command-line arguments.\n");
-        return 1;
+        printf("       %s <arg0> <arg1> <arg2>\n", argv[0]);
+        printf("       arg0, arg1, arg2: FFT lengths in 3D\n");
+        printf("       e.g.: %s 64 64 64\n", argv[0]);
+        return -1;
     }
 
     unsigned int nx = atoi(argv[1]);

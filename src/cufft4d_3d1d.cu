@@ -7,6 +7,7 @@
 
 #define PRINT_FLAG 0
 #define NPRINTS 30  // print size
+#define NITER 5 // no. of iterations
 
 void run_test_cufft_4d_alt(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
     srand(2025);
@@ -29,7 +30,7 @@ void run_test_cufft_4d_alt(unsigned int nx, unsigned int ny, unsigned int nz, un
     complex_freq = (cufftComplex *)malloc(size);
 
     // Initialize input complex signal
-    for (unsigned int i = 0; i < element_size; i++) {
+    for (unsigned int i = 0; i < element_size; ++i) {
         complex_samples[i].x = rand() / (float)RAND_MAX;
         complex_samples[i].y = 0;
     }
@@ -37,7 +38,7 @@ void run_test_cufft_4d_alt(unsigned int nx, unsigned int ny, unsigned int nz, un
     // Print input stuff
     if (PRINT_FLAG) {
         printf("Complex data...\n");
-        for (unsigned int i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; ++i) {
             printf("  %2.4f + i%2.4f\n", complex_samples[i].x, complex_samples[i].y);
         }
     }
@@ -92,7 +93,7 @@ void run_test_cufft_4d_alt(unsigned int nx, unsigned int ny, unsigned int nz, un
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
-        for (unsigned int i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; ++i) {
             printf("  %2.4f + i%2.4f\n", complex_freq[i].x, complex_freq[i].y);
         }
     }
@@ -116,7 +117,10 @@ void run_test_cufft_4d_alt(unsigned int nx, unsigned int ny, unsigned int nz, un
 int main(int argc, char **argv) {
     if (argc != 5) {
         printf("Error: This program requires exactly 4 command-line arguments.\n");
-        return 1;
+        printf("       %s <arg0> <arg1> <arg2> <arg3>\n", argv[0]);
+        printf("       arg0, arg1, arg2, arg3: FFT lengths in 4D\n");
+        printf("       e.g.: %s 64 64 64 64\n", argv[0]);
+        return -1;
     }
 
     unsigned int nx = atoi(argv[1]);

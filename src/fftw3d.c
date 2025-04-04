@@ -28,7 +28,7 @@ void run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     if (IFFT_FLAG) {new_complex_samples = (fftw_complex *)fftw_malloc(size);}
 
     // Initialize input complex signal
-    for (unsigned int i = 0; i < element_size; i++) {
+    for (unsigned int i = 0; i < element_size; ++i) {
         complex_samples[i][0] = rand() / (float)RAND_MAX;
         complex_samples[i][1] = 0;
     }
@@ -36,7 +36,7 @@ void run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     // Print input stuff
     if (PRINT_FLAG) {
         printf("Complex data...\n");
-        for (unsigned int i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; ++i) {
             printf("  %2.4f + i%2.4f\n", complex_samples[i][0], complex_samples[i][1]);
         }
     }
@@ -61,7 +61,7 @@ void run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
         fftw_execute(plan_ifft);
 
         // Normalize
-        for (unsigned int i = 0; i < element_size; i++) {
+        for (unsigned int i = 0; i < element_size; ++i) {
             new_complex_samples[i][0] /= (float)element_size;
             new_complex_samples[i][1] /= (float)element_size;
         }
@@ -70,7 +70,7 @@ void run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     // Print output stuff
     if (PRINT_FLAG && IFFT_FLAG) {
         printf("Complex samples after FFT and IFFT...\n");
-        for (unsigned int i = 0; i < NPRINTS; i++) {
+        for (unsigned int i = 0; i < NPRINTS; ++i) {
             if (IFFT_FLAG)
             printf("  %2.4f + i%2.4f -> %2.4f + i%2.4f\n", complex_samples[i][0], complex_samples[i][1], new_complex_samples[i][0], new_complex_samples[i][1]);
         }
@@ -92,7 +92,10 @@ void run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
 int main(int argc, char **argv) {
     if (argc != 4) {
         printf("Error: This program requires exactly 3 command-line arguments.\n");
-        return 1;
+        printf("       %s <arg0> <arg1> <arg2>\n", argv[0]);
+        printf("       arg0, arg1, arg2: FFT lengths in 3D\n");
+        printf("       e.g.: %s 64 64 64\n", argv[0]);
+        return -1;
     }
 
     unsigned int nx = atoi(argv[1]);
