@@ -6,8 +6,9 @@
 
 #define PRINT_FLAG 0
 #define NPRINTS 30  // print size
+#define NITER 5 // no. of iterations
 
-void run_test_fftw_2d(unsigned int nx, unsigned int ny) {
+float run_test_fftw_2d(unsigned int nx, unsigned int ny) {
     srand(2025);
 
     // Declaration
@@ -61,12 +62,13 @@ void run_test_fftw_2d(unsigned int nx, unsigned int ny) {
 
     // Compute elapsed time
     elapsed_time = (double)(stop - start) / CLOCKS_PER_SEC;
-    printf("%.6f\n", elapsed_time);
 
     // Clean up
     fftw_destroy_plan(plan);
     fftw_free(complex_samples);
     fftw_free(complex_freq);
+
+    return elapsed_time;
 }
 
 
@@ -81,6 +83,15 @@ int main(int argc, char **argv) {
 
     unsigned int nx = atoi(argv[1]);
     unsigned int ny = atoi(argv[2]);
+
+    // Discard the first time running for this as well to make apples-to-apples comparison
     run_test_fftw_2d(nx, ny);
+
+    float sum = 0.0;
+    for (unsigned int i = 0; i < NITER; ++i) {
+        sum += run_test_fftw_2d(nx, ny);
+    }
+    printf("%.6f\n", sum/(float)NITER);
+
     return 0;
 }

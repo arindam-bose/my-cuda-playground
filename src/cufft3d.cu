@@ -122,7 +122,17 @@ int main(int argc, char **argv) {
     unsigned int nx = atoi(argv[1]);
     unsigned int ny = atoi(argv[2]);
     unsigned int nz = atoi(argv[3]);
+
+    // Discard the first time running. It apparantly does some extra work during first time
+    // JIT??
     run_test_cufft_3d(nx, ny, nz);
+
+    float sum = 0.0;
+    for (unsigned int i = 0; i < NITER; ++i) {
+        sum += run_test_cufft_3d(nx, ny, nz);
+    }
+    printf("%.6f\n", sum/(float)NITER);
+
     CHECK_CUDA(cudaDeviceReset());
     return 0;
 }

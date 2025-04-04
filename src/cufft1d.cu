@@ -116,14 +116,15 @@ int main(int argc, char **argv) {
 
     unsigned int nx = atoi(argv[1]);
 
+    // Discard the first time running. It apparantly does some extra work during first time
+    // JIT??
+    run_test_cufft_1d(nx);
+
     float sum = 0.0;
-    float item = 0.0; 
     for (unsigned int i = 0; i < NITER; ++i) {
-        item = run_test_cufft_1d(nx); 
-        printf("%d: %f\n", i, item);
-        sum += item;
+        sum += run_test_cufft_1d(nx);
     }
-    printf("Avg: %.6f\n", sum/(float)NITER);
+    printf("%.6f\n", sum/(float)NITER);
     
     CHECK_CUDA(cudaDeviceReset());
     return 0;

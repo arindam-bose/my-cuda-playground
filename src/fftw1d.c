@@ -72,7 +72,6 @@ float run_test_fftw_1d(unsigned int nx) {
 
     // Compute elapsed time
     elapsed_time = (double)(stop - start) / CLOCKS_PER_SEC;
-    // printf("%.6f\n", elapsed_time);
 
     // Clean up
     fftw_destroy_plan(plan);
@@ -95,12 +94,12 @@ int main(int argc, char **argv) {
 
     unsigned int nx = atoi(argv[1]);
 
+    // Discard the first time running for this as well to make apples-to-apples comparison
+    run_test_fftw_1d(nx);
+
     float sum = 0.0;
-    float item = 0.0; 
     for (unsigned int i = 0; i < NITER; ++i) {
-        item = run_test_fftw_1d(nx); 
-        printf("%d: %f\n", i, item);
-        sum += item;
+        sum += run_test_fftw_1d(nx);
     }
     printf("%.6f\n", sum/(float)NITER);
 

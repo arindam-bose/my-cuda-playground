@@ -9,7 +9,7 @@
 #define NPRINTS 30  // print size
 #define NITER 5 // no. of iterations
 
-void run_test_cufft_4d_alt(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
+float run_test_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
     srand(2025);
     
     // Declaration
@@ -100,7 +100,7 @@ void run_test_cufft_4d_alt(unsigned int nx, unsigned int ny, unsigned int nz, un
 
     // Compute elapsed time
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
-    printf("%.6f\n", elapsed_time * 1e-3);
+    // printf("%.6f\n", elapsed_time * 1e-3);
 
     // Cleanup
     CHECK_CUDA(cudaFree(d_complex_freq));
@@ -111,6 +111,8 @@ void run_test_cufft_4d_alt(unsigned int nx, unsigned int ny, unsigned int nz, un
     CHECK_CUFFT(cufftDestroy(plan1d));
     free(complex_freq);
     free(complex_samples);
+
+    return elapsed_time * 1e-3;
 }
 
 
@@ -127,7 +129,17 @@ int main(int argc, char **argv) {
     unsigned int ny = atoi(argv[2]);
     unsigned int nz = atoi(argv[3]);
     unsigned int nw = atoi(argv[4]);
-    run_test_cufft_4d_alt(nx, ny, nz, nw);
+
+    // Discard the first time running. It apparantly does some extra work during first time
+    // JIT??
+    run_test_cufft_4d_3d1d(nx, ny, nz, nw);
+
+    float sum = 0.0;
+    for (unsigned int i = 0; i < NITER; ++i) {
+        sum += run_test_cufft_4d_3d1d(nx, ny, nz, nw);
+    }
+    printf("%.6f\n", sum/(float)NITER);
+
     CHECK_CUDA(cudaDeviceReset());
     return 0;
 }

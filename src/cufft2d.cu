@@ -79,7 +79,6 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
 
     // Compute elapsed time
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
-    // printf("%.6f\n", elapsed_time * 1e-3);
 
     // Clean up
     CHECK_CUFFT(cufftDestroy(plan));
@@ -105,7 +104,17 @@ int main(int argc, char **argv) {
 
     unsigned int nx = atoi(argv[1]);
     unsigned int ny = atoi(argv[2]);
+
+    // Discard the first time running. It apparantly does some extra work during first time
+    // JIT??
     run_test_cufft_2d(nx, ny);
+
+    float sum = 0.0;
+    for (unsigned int i = 0; i < NITER; ++i) {
+        sum += run_test_cufft_2d(nx, ny);
+    }
+    printf("%.6f\n", sum/(float)NITER);
+
     CHECK_CUDA(cudaDeviceReset());
     return 0;
 }
