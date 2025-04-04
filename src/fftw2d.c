@@ -61,7 +61,7 @@ void run_test_fftw_2d(unsigned int nx, unsigned int ny) {
 
     // Compute elapsed time
     elapsed_time = (double)(stop - start) / CLOCKS_PER_SEC;
-    printf("Elapsed time: %.6f s\n", elapsed_time);
+    printf("%.6f\n", elapsed_time);
 
     // Clean up
     fftw_destroy_plan(plan);

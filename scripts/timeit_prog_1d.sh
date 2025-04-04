@@ -19,6 +19,11 @@ else
     exit 2
 fi
 
+OUTPUT_FILE="build/time_results_$PROGRAM.txt"
+
+# First line is the program name
+echo -e "$PROGRAM" > "$OUTPUT_FILE"
+
 # Define argument sets (each line represents a set of arguments)
 ARGS_LIST=(
     "64"
@@ -53,6 +58,8 @@ EXECUTABLE="./build/$PROGRAM"
 for ARGS in "${ARGS_LIST[@]}"
 do
     echo "Running: $EXECUTABLE $ARGS"
-    $EXECUTABLE $ARGS
+    result=$($EXECUTABLE $ARGS)
+    echo "Elapsed time: $result s"
+    echo -e "$ARGS" "$result" >> "$OUTPUT_FILE"
     echo "---------------------------------------"
 done

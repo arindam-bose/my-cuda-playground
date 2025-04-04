@@ -78,7 +78,7 @@ void run_test_cufft_2d(unsigned int nx, unsigned int ny) {
 
     // Compute elapsed time
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
-    printf("Elapsed time: %.6f s\n", elapsed_time * 1e-3);
+    printf("%.6f\n", elapsed_time * 1e-3);
 
     // Clean up
     CHECK_CUFFT(cufftDestroy(plan));
