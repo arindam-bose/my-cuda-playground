@@ -13,22 +13,39 @@ import matplotlib.pyplot as plt
 # elapsed_time_1 = [0.253089, 0.089724, 0.090278, 0.094996, 0.124108, 0.273933, 1.347114]
 # elapsed_time_2 = [0.000939, 0.000889, 0.003164, 0.016617, 0.279231, 1.922418, 18.610394]
 
+# x_axis = np.arange(len(fft_ticks))
+# fig, ax = plt.subplots(1,1)
+# ax.plot(x_axis, elapsed_time_1, marker='o', label=program1)
+# ax.plot(x_axis, elapsed_time_2, marker='*', label=program2)
+# ax.set_title(f'{program1} vs. {program2}')
+# ax.set_xticks(x_axis, fft_ticks, rotation=90)
+# ax.set_xlabel('FFT length')
+# ax.set_ylabel('Elapsed time (s)')
+# ax.legend(loc='upper left')
+# ax.grid('on')
+# plt.tight_layout()
+# plt.show()
+
+
+
 program1 = 'cufft 4D (4x1D)'
-program2 = 'fftw 4D'
+program2 = 'cufft 4D (3D+1D)'
+program3 = 'fftw 4D'
 fft_ticks = ['8x8x8x8', '16x16x16x16', '32x32x32x32', '64x64x64x64', '64x64x512x128', '128x128x128x128']
-elapsed_time_1 = [0.071437, 0.074086, 0.088882, 0.204113, 4.072073, 4.374988]
-elapsed_time_2 = [0.001216, 0.005029, 0.069591, 0.981813, 29.892130, 66.537964]
+elapsed_time_1 = [0.077631, 0.076496, 0.093748, 0.211920, 4.434531, 4.107372]
+elapsed_time_2 = [0.092756, 0.086410, 0.106949, 0.202140, 2.862685, 3.263932]
+elapsed_time_3 = [0.001250, 0.005084, 0.072448, 1.053681, 29.177355, 64.327660]
 
 x_axis = np.arange(len(fft_ticks))
 fig, ax = plt.subplots(1,1)
 ax.plot(x_axis, elapsed_time_1, marker='o', label=program1)
 ax.plot(x_axis, elapsed_time_2, marker='*', label=program2)
-ax.set_title(f'{program1} vs. {program2}')
+ax.plot(x_axis, elapsed_time_3, marker='x', label=program3)
+ax.set_title(f'{program1} vs. {program2} vs. {program3}')
 ax.set_xticks(x_axis, fft_ticks, rotation=90)
 ax.set_xlabel('FFT length')
 ax.set_ylabel('Elapsed time (s)')
 ax.legend(loc='upper left')
 ax.grid('on')
-
 plt.tight_layout()
 plt.show()

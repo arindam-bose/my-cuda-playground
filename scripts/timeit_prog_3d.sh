@@ -3,19 +3,20 @@
 # Create the executable if the arguments are correct
 if [ -z "$1" ]; then
     echo "This script should be called with atleast one argument:" >&2
-    echo "e.g. $0 nvcc" >&2
-    echo "     $0 gcc" >&2
+    echo "e.g. $0 cufft" >&2
+    echo "     $0 fftw" >&2
     exit 2
-elif [ "$1" == "nvcc" ]; then
-    echo "Generating binary for nvcc"
+elif [ "$1" == "cufft" ]; then
+    echo "Generating binary for cufft"
     PROGRAM=cufft3d
     nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
-elif [ "$1" == "gcc" ]; then
-    echo "Generating binary for gcc"
+elif [ "$1" == "fftw" ]; then
+    echo "Generating binary for fftw"
     PROGRAM=fftw3d
     gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
 else
-    echo "First argument should be {nvcc|gcc}"
+    echo "First argument should be {cufft|fftw}"
+    exit 2
 fi
 
 # Define argument sets (each line represents a set of arguments)
