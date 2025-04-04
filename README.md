@@ -36,4 +36,4 @@ Build cuda_11.4.r11.4/compiler.31964100_0
 ```nvcc -o build/module src/module.cu --ptxas-options=-v --use_fast_math -lcufft```
 
 ## Run GCC individual program
-```gcc -o build/module src/module.c  -lfftw3 -lm```
+```gcc -o build/module src/module.c -lfftw3 -lm```
