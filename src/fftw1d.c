@@ -7,7 +7,6 @@
 #define M_PI   3.14159265358979323846  /* pi */
 #define PRINT_FLAG 0
 #define NPRINTS 30  // print size
-#define NITER 5 // no. of iterations
 
 float run_test_fftw_1d(unsigned int nx) {
     // Declaration
@@ -84,24 +83,26 @@ float run_test_fftw_1d(unsigned int nx) {
 
 
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        printf("Error: This program requires exactly 1 command-line arguments.\n");
-        printf("       %s <arg0>\n", argv[0]);
+    if (argc != 3) {
+        printf("Error: This program requires exactly 2 command-line arguments.\n");
+        printf("       %s <arg0> <arg1>\n", argv[0]);
         printf("       arg0: FFT length in 1D\n");
-        printf("       e.g.: %s 64\n", argv[0]);
+        printf("       arg1: Number of iterations\n");
+        printf("       e.g.: %s 64 5\n", argv[0]);
         return -1;
     }
 
     unsigned int nx = atoi(argv[1]);
+    unsigned int niter = atoi(argv[2]);
 
     // Discard the first time running for this as well to make apples-to-apples comparison
     run_test_fftw_1d(nx);
 
     float sum = 0.0;
-    for (unsigned int i = 0; i < NITER; ++i) {
+    for (unsigned int i = 0; i < niter; ++i) {
         sum += run_test_fftw_1d(nx);
     }
-    printf("%.6f\n", sum/(float)NITER);
+    printf("%.6f\n", sum/(float)niter);
 
     return 0;
 }

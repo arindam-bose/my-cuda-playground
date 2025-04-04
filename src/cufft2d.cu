@@ -6,7 +6,6 @@
 
 #define PRINT_FLAG 0
 #define NPRINTS 30  // print size
-#define NITER 5 // no. of iterations
 
 float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     srand(2025);
@@ -94,26 +93,28 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
 
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        printf("Error: This program requires exactly 2 command-line arguments.\n");
-        printf("       %s <arg0> <arg1>\n", argv[0]);
+    if (argc != 4) {
+        printf("Error: This program requires exactly 3 command-line arguments.\n");
+        printf("       %s <arg0> <arg1> <arg2>\n", argv[0]);
         printf("       arg0, arg1: FFT lengths in 2D\n");
-        printf("       e.g.: %s 64 64\n", argv[0]);
+        printf("       arg2: Number of iterations\n");
+        printf("       e.g.: %s 64 64 5\n", argv[0]);
         return -1;
     }
 
     unsigned int nx = atoi(argv[1]);
     unsigned int ny = atoi(argv[2]);
+    unsigned int niter = atoi(argv[3]);
 
     // Discard the first time running. It apparantly does some extra work during first time
     // JIT??
     run_test_cufft_2d(nx, ny);
 
     float sum = 0.0;
-    for (unsigned int i = 0; i < NITER; ++i) {
+    for (unsigned int i = 0; i < niter; ++i) {
         sum += run_test_cufft_2d(nx, ny);
     }
-    printf("%.6f\n", sum/(float)NITER);
+    printf("%.6f\n", sum/(float)niter);
 
     CHECK_CUDA(cudaDeviceReset());
     return 0;

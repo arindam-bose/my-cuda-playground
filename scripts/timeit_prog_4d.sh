@@ -26,6 +26,13 @@ fi
 
 OUTPUT_FILE="build/time_results_$PROGRAM.txt"
 
+# Number of iteration is optional second argument
+if [ "$2" == "" ]; then
+    NITER="5"
+else
+    NITER=$2
+fi
+
 # First line is the program name
 echo -e "$PROGRAM" > "$OUTPUT_FILE"
 
@@ -35,9 +42,9 @@ ARGS_LIST=(
     "16 16 16 16"
     "32 32 32 32"
     "64 64 64 64"
-    "64 64 512 128"
-    "64 64 512 1024"
-    "128 128 128 128"
+    # "64 64 512 128"
+    # "64 64 512 1024"
+    # "128 128 128 128"
 )
 
 # Define the executable name
@@ -46,8 +53,8 @@ EXECUTABLE="./build/$PROGRAM"
 # Loop through each set of arguments and time the execution
 for ARGS in "${ARGS_LIST[@]}"
 do
-    echo "Running: $EXECUTABLE $ARGS"
-    result=$($EXECUTABLE $ARGS)
+    echo "Running: $EXECUTABLE $ARGS $NITER"
+    result=$($EXECUTABLE $ARGS $NITER)
     echo "Elapsed time: $result s"
     echo -e "$ARGS" "$result" >> "$OUTPUT_FILE"
     echo "---------------------------------------"
