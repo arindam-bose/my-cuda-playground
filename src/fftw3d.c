@@ -33,6 +33,14 @@ void run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
         complex_samples[i][1] = 0;
     }
 
+    // Print input stuff
+    if (PRINT_FLAG) {
+        printf("Complex data...\n");
+        for (unsigned int i = 0; i < NPRINTS; i++) {
+            printf("  %2.4f + i%2.4f\n", complex_samples[i][0], complex_samples[i][1]);
+        }
+    }
+
     // Start time
     start = clock();
 

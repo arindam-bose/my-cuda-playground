@@ -34,6 +34,14 @@ void run_test_cufft_4d_alt(unsigned int nx, unsigned int ny, unsigned int nz, un
         complex_samples[i].y = 0;
     }
 
+    // Print input stuff
+    if (PRINT_FLAG) {
+        printf("Complex data...\n");
+        for (unsigned int i = 0; i < NPRINTS; i++) {
+            printf("  %2.4f + i%2.4f\n", complex_samples[i].x, complex_samples[i].y);
+        }
+    }
+
     // Create CUDA events
     CHECK_CUDA(cudaEventCreate(&start));
     CHECK_CUDA(cudaEventCreate(&stop));
