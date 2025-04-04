@@ -1,13 +1,22 @@
 #!/bin/bash
 
-# Create the executable
-# for NVCC
-# PROGRAM=cufft1d
-# nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
-
-# for GCC
-PROGRAM=fftw1d
-gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
+# Create the executable if the arguments are correct
+if [ -z "$1" ]; then
+    echo "This script should be called with atleast one argument:" >&2
+    echo "e.g. $0 nvcc" >&2
+    echo "     $0 gcc" >&2
+    exit 2
+elif [ "$1" == "nvcc" ]; then
+    echo "Generating binary for nvcc"
+    PROGRAM=cufft1d
+    nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
+elif [ "$1" == "gcc" ]; then
+    echo "Generating binary for gcc"
+    PROGRAM=fftw1d
+    gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
+else
+    echo "First argument should be {nvcc|gcc}"
+fi
 
 # Define argument sets (each line represents a set of arguments)
 ARGS_LIST=(
