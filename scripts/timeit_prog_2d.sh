@@ -33,18 +33,18 @@ echo -e "$PROGRAM" > "$OUTPUT_FILE"
 
 # Define argument sets (each line represents a set of arguments)
 ARGS_LIST=(
-    "8 8"
-    "16 16"
-    "32 32"
-    "64 64"
-    "128 128"
-    "256 256"
-    "512 512"
-    # "1024 1024"
-    # "2048 2048"
-    # "4096 4096"
-    # "8192 8192"
-    # "16384 16384"
+    "8x8"
+    "16x16"
+    "32x32"
+    "64x64"
+    "128x128"
+    "256x256"
+    "512x512"
+    # "1024x1024"
+    # "2048x2048"
+    # "4096x4096"
+    # "8192x8192"
+    # "16384x16384"
 )
 
 # Define the executable name
@@ -53,9 +53,13 @@ EXECUTABLE="./build/$PROGRAM"
 # Loop through each set of arguments and time the execution
 for ARGS in "${ARGS_LIST[@]}"
 do
-    echo "Running: $EXECUTABLE $ARGS $NITER"
-    result=$($EXECUTABLE $ARGS $NITER)
+    # Replace the x with space to be used as proper arguments
+    ARGS_R=$(echo "$ARGS" | tr x " ")
+    echo "Running: $EXECUTABLE $ARGS_R $NITER"
+    result=$($EXECUTABLE $ARGS_R $NITER)
     echo "Elapsed time: $result s"
     echo -e "$ARGS" "$result" >> "$OUTPUT_FILE"
     echo "---------------------------------------"
 done
+
+echo "Outputs are saved at: $OUTPUT_FILE"
