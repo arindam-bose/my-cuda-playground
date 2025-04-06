@@ -37,3 +37,5 @@ Build cuda_11.4.r11.4/compiler.31964100_0
 
 ## Run GCC individual program
 ```gcc -o build/module src/module.c -lfftw3 -lm```
+
+python ./scripts/plot_et.py 
