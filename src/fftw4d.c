@@ -4,8 +4,18 @@
 #include <time.h>
 #include <fftw3.h>
 
-#define PRINT_FLAG 0
-#define NPRINTS 30  // print size
+#define PRINT_FLAG 1
+#define NPRINTS 5  // print size
+
+void printf_fftw_cmplx_array(fftw_complex *complex_array, unsigned int size) {
+    for (unsigned int i = 0; i < NPRINTS; ++i) {
+        printf("  %2.4f + i%2.4f\n", complex_array[i][0], complex_array[i][1]);
+    }
+    printf("...\n");
+    for (unsigned int i = size - NPRINTS; i < size; ++i) {
+        printf("  %2.4f + i%2.4f\n", complex_array[i][0], complex_array[i][1]);
+    }
+}
 
 float run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
     srand(2025);
@@ -34,9 +44,7 @@ float run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
     // Print input stuff
     if (PRINT_FLAG) {
         printf("Complex data...\n");
-        for (unsigned int i = 0; i < NPRINTS; ++i) {
-            printf("  %2.4f + i%2.4f\n", complex_samples[i][0], complex_samples[i][1]);
-        }
+        printf_fftw_cmplx_array(complex_samples, element_size);
     }
     
     // Start time
@@ -54,9 +62,7 @@ float run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
-        for (unsigned int i = 0; i < NPRINTS; ++i) {
-            printf("  %2.4f + i%2.4f\n", complex_freq[i][0], complex_freq[i][1]);
-        }
+        printf_fftw_cmplx_array(complex_freq, element_size);
     }
 
     // Compute elapsed time

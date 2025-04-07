@@ -5,8 +5,18 @@
 #include <fftw3.h>
 
 #define M_PI   3.14159265358979323846  /* pi */
-#define PRINT_FLAG 0
-#define NPRINTS 30  // print size
+#define PRINT_FLAG 1
+#define NPRINTS 5  // print size
+
+void printf_fftw_cmplx_array(fftw_complex *complex_array, unsigned int size) {
+    for (unsigned int i = 0; i < NPRINTS; ++i) {
+        printf("  %2.4f + i%2.4f\n", complex_array[i][0], complex_array[i][1]);
+    }
+    printf("...\n");
+    for (unsigned int i = size - NPRINTS; i < size; ++i) {
+        printf("  %2.4f + i%2.4f\n", complex_array[i][0], complex_array[i][1]);
+    }
+}
 
 float run_test_fftw_1d(unsigned int nx) {
     // Declaration
@@ -44,9 +54,7 @@ float run_test_fftw_1d(unsigned int nx) {
             printf("  %2.4f\n", samples[i]);
         }
         printf("Complex data...\n");
-        for (unsigned int i = 0; i < NPRINTS; ++i) {
-            printf("  %2.4f + i%2.4f\n", complex_samples[i][0], complex_samples[i][1]);
-        }
+        printf_fftw_cmplx_array(complex_samples, nx);
     }
 
     // Start time
@@ -64,9 +72,7 @@ float run_test_fftw_1d(unsigned int nx) {
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
-        for (unsigned int i = 0; i < NPRINTS; ++i) {
-            printf("  %2.4f + i%2.4f\n", complex_freq[i][0], complex_freq[i][1]);
-        }
+        printf_fftw_cmplx_array(complex_freq, nx);
     }
 
     // Compute elapsed time
