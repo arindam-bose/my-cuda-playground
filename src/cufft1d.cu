@@ -5,8 +5,18 @@
 #include <cufft.h>
 
 #define M_PI   3.14159265358979323846  /* pi */
-#define PRINT_FLAG 0
-#define NPRINTS 30  // print size
+#define PRINT_FLAG 1
+#define NPRINTS 5  // print size
+
+void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
+    for (unsigned int i = 0; i < NPRINTS; ++i) {
+        printf("  %2.4f + i%2.4f\n", complex_array[i].x, complex_array[i].y);
+    }
+    printf("...\n");
+    for (unsigned int i = size - NPRINTS; i < size; ++i) {
+        printf("  %2.4f + i%2.4f\n", complex_array[i].x, complex_array[i].y);
+    }
+}
 
 float run_test_cufft_1d(unsigned int nx) {
     // Declaration
@@ -46,9 +56,7 @@ float run_test_cufft_1d(unsigned int nx) {
             printf("  %2.4f\n", samples[i]);
         }
         printf("Complex data...\n");
-        for (unsigned int i = 0; i < NPRINTS; ++i) {
-            printf("  %2.4f + i%2.4f\n", complex_samples[i].x, complex_samples[i].y);
-        }
+        printf_cufft_cmplx_array(complex_samples, nx);
     }
 
     // Create CUDA events
@@ -81,9 +89,7 @@ float run_test_cufft_1d(unsigned int nx) {
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
-        for (unsigned int i = 0; i < NPRINTS; ++i) {
-            printf("  %2.4f + i%2.4f\n", complex_freq[i].x, complex_freq[i].y);
-        }
+        printf_cufft_cmplx_array(complex_freq, nx);
     }
 
     // Compute elapsed time

@@ -76,10 +76,35 @@ float run_test_cufft_4d_4x1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     CHECK_CUDA(cudaMemcpy(d_complex_samples, complex_samples, size, cudaMemcpyHostToDevice));
 
     // Perform FFT along each dimension sequentially
-    execute_cufft1d(d_complex_samples, d_complex_freq, nx, ny * nz * nw, 1, nx);         // FFT along X
-    execute_cufft1d(d_complex_freq, d_complex_freq, ny, nx * nz * nw, nx, ny);           // FFT along Y
-    execute_cufft1d(d_complex_freq, d_complex_freq, nz, nx * ny * nw, nx * ny, nz);      // FFT along Z
-    execute_cufft1d(d_complex_freq, d_complex_freq, nw, nx * ny * nz, nx * ny * nz, nw); // FFT along W
+    // execute_cufft1d(d_complex_samples, d_complex_freq, nx, ny * nz * nw, 1, nx);         // FFT along X
+    // execute_cufft1d(d_complex_freq, d_complex_freq, ny, nx * nz * nw, nx, ny);           // FFT along Y
+    // execute_cufft1d(d_complex_freq, d_complex_freq, nz, nx * ny * nw, nx * ny, nz);      // FFT along Z
+    // execute_cufft1d(d_complex_freq, d_complex_freq, nw, nx * ny * nz, nx * ny * nz, nw); // FFT along W
+
+
+
+
+    cufftHandle plan4D;
+    int n[4] = {nx, ny, nz, nw};
+    cufftPlanMany(
+        &plan4D,
+        4,      // rank
+        n,      // n (dimensions)
+        nullptr, // inembed (if stride is used)
+        1,      // istride
+        0,      // idist
+        nullptr, // onembed (if stride is used)
+        1,      // ostride
+        0,      // odist
+        CUFFT_C2C, // type
+        1       // batch
+    );
+
+    // 5. Execute the 4D FFT
+    cufftExecC2C(plan4D, d_complex_samples, d_complex_freq, CUFFT_FORWARD);
+
+
+
 
     // Retrieve the results into host memory
     CHECK_CUDA(cudaMemcpy(complex_freq, d_complex_freq, size, cudaMemcpyDeviceToHost));

@@ -83,6 +83,10 @@ float run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
             printf("  %2.4f + i%2.4f -> %2.4f + i%2.4f\n", complex_samples[i][0], complex_samples[i][1], new_complex_samples[i][0], new_complex_samples[i][1]);
         }
     }
+    if (PRINT_FLAG) {
+        printf("Fourier Coefficients...\n");
+        printf_fftw_cmplx_array(complex_freq, element_size);
+    }
 
     // Compute elapsed time
     elapsed_time = (double)(stop - start) / CLOCKS_PER_SEC;

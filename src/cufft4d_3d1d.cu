@@ -79,12 +79,13 @@ float run_test_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     // There are NX*NY*NZ such transforms (one for each (x,y,z) point)
     int n[1] = { (int)nw };
     int batch = nx * ny * nz;
+    int embed[1] = { (int)nw };
     int stride = 1;
     int dist = nw;
 
     CHECK_CUFFT(cufftPlanMany(&plan1d, 1, n,       // rank, dimensions
-                                NULL, stride, dist,
-                                NULL, stride, dist,
+                                embed, stride, dist,
+                                embed, stride, dist,
                                 CUFFT_C2C, batch));
 
     // Execute the 1D FFTs (in-place)
