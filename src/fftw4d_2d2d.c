@@ -9,11 +9,11 @@
 
 void printf_fftw_cmplx_array(fftw_complex *complex_array, unsigned int size) {
     for (unsigned int i = 0; i < NPRINTS; ++i) {
-        printf("  %2.4f + i%2.4f\n", complex_array[i][0], complex_array[i][1]);
+        printf("  (%2.4f, %2.4fi)\n", complex_array[i][0], complex_array[i][1]);
     }
     printf("...\n");
     for (unsigned int i = size - NPRINTS; i < size; ++i) {
-        printf("  %2.4f + i%2.4f\n", complex_array[i][0], complex_array[i][1]);
+        printf("  (%2.4f, %2.4fi)\n", complex_array[i][0], complex_array[i][1]);
     }
 }
 
@@ -22,10 +22,16 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
 
     // Declaration
     fftw_complex *complex_data;
-    fftw_plan plan;
+    fftw_complex *temp2d_xy, *temp2d_zw;
+    fftw_plan plan2d_xy, plan2d_zw;
 
     unsigned int element_size = nx * ny * nz * nw;
     size_t size = sizeof(fftw_complex) * element_size;
+
+    unsigned int element_size_xy = nx * ny;
+    size_t size_xy = sizeof(fftw_complex) * element_size_xy;
+    unsigned int element_size_zw = nz * nw;
+    size_t size_zw = sizeof(fftw_complex) * element_size_zw;
 
     clock_t start, stop;
     float elapsed_time;
@@ -48,61 +54,57 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
     // Start time
     start = clock();
 
-    // Temporary buffer for 2D FFTs
-    fftw_complex *temp_2d_xy = fftw_malloc(sizeof(fftw_complex) * nx * ny);
-
     // ---- 1. 2D FFT over (X, Y) for each Z, W ----
-    fftw_plan plan_2d_xy = fftw_plan_dft_2d(nx, ny, temp_2d_xy, temp_2d_xy, FFTW_FORWARD, FFTW_ESTIMATE);
+    temp2d_xy = fftw_malloc(size_xy);
+    plan2d_xy = fftw_plan_dft_2d(nx, ny, temp2d_xy, temp2d_xy, FFTW_FORWARD, FFTW_ESTIMATE);
     for (int z = 0; z < nz; z++) {
         for (int w = 0; w < nw; w++) {
             // Extract 2D slice
             for (int x = 0; x < nx; x++) {
                 for (int y = 0; y < ny; y++) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
-                    temp_2d_xy[x * ny + y][0] = complex_data[idx][0];
-                    temp_2d_xy[x * ny + y][1] = complex_data[idx][1];
+                    temp2d_xy[x * ny + y][0] = complex_data[idx][0];
+                    temp2d_xy[x * ny + y][1] = complex_data[idx][1];
                 }
             }
-            fftw_execute(plan_2d_xy);
+            fftw_execute(plan2d_xy);
             // Copy back
             for (int x = 0; x < nx; x++) {
                 for (int y = 0; y < ny; y++) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
-                    complex_data[idx][0] = temp_2d_xy[x * ny + y][0];
-                    complex_data[idx][1] = temp_2d_xy[x * ny + y][1];
+                    complex_data[idx][0] = temp2d_xy[x * ny + y][0];
+                    complex_data[idx][1] = temp2d_xy[x * ny + y][1];
                 }
             }
         }
     }
-    fftw_destroy_plan(plan_2d_xy);
 
     // ---- 2. 2D FFT over (Z, W) for each X, Y ----
-    fftw_complex *temp_2d_zw = fftw_malloc(sizeof(fftw_complex) * nz * nw);
-    fftw_plan plan_2d_zw = fftw_plan_dft_2d(nz, nw, temp_2d_zw, temp_2d_zw, FFTW_FORWARD, FFTW_ESTIMATE);
+    temp2d_zw = fftw_malloc(size_zw);
+    plan2d_zw = fftw_plan_dft_2d(nz, nw, temp2d_zw, temp2d_zw, FFTW_FORWARD, FFTW_ESTIMATE);
     for (int x = 0; x < nx; x++) {
         for (int y = 0; y < ny; y++) {
             // Extract 2D slice
             for (int z = 0; z < nz; z++) {
                 for (int w = 0; w < nw; w++) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
-                    temp_2d_zw[z * nw + w][0] = complex_data[idx][0];
-                    temp_2d_zw[z * nw + w][1] = complex_data[idx][1];
+                    temp2d_zw[z * nw + w][0] = complex_data[idx][0];
+                    temp2d_zw[z * nw + w][1] = complex_data[idx][1];
                 }
             }
-            fftw_execute(plan_2d_zw);
+            fftw_execute(plan2d_zw);
             // Copy back
             for (int z = 0; z < nz; z++) {
                 for (int w = 0; w < nw; w++) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
-                    complex_data[idx][0] = temp_2d_zw[z * nw + w][0];
-                    complex_data[idx][1] = temp_2d_zw[z * nw + w][1];
+                    complex_data[idx][0] = temp2d_zw[z * nw + w][0];
+                    complex_data[idx][1] = temp2d_zw[z * nw + w][1];
                 }
             }
         }
     }
-    fftw_destroy_plan(plan_2d_zw);
-
-    // You can repeat further 2D FFTs like (X,Z), (Y,W) to further complete the 4D spread
+    // End time
+    stop = clock();
 
     // Print input stuff
     if (PRINT_FLAG) {
@@ -110,8 +112,15 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
         printf_fftw_cmplx_array(complex_data, element_size);
     }
 
+    // Compute elapsed time
+    elapsed_time = (double)(stop - start) / CLOCKS_PER_SEC;
+
+    // Clean up
+    fftw_destroy_plan(plan2d_xy);
+    fftw_destroy_plan(plan2d_zw);
     fftw_free(complex_data);
-    fftw_free(temp_2d_zw);
+    fftw_free(temp2d_xy);
+    fftw_free(temp2d_zw);
     fftw_cleanup();
 }
 

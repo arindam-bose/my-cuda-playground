@@ -6,15 +6,15 @@
 #include <math.h>
 
 #define PRINT_FLAG 1
-#define NPRINTS 16  // print size
+#define NPRINTS 5  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
     for (unsigned int i = 0; i < NPRINTS; ++i) {
-        printf("  %2.4f + i%2.4f\n", complex_array[i].x, complex_array[i].y);
+        printf("  (%2.4f, %2.4fi)\n", complex_array[i].x, complex_array[i].y);
     }
     printf("...\n");
     for (unsigned int i = size - NPRINTS; i < size; ++i) {
-        printf("  %2.4f + i%2.4f\n", complex_array[i].x, complex_array[i].y);
+        printf("  (%2.4f, %2.4fi)\n", complex_array[i].x, complex_array[i].y);
     }
 }
 

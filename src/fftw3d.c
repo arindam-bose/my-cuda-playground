@@ -9,11 +9,11 @@
 
 void printf_fftw_cmplx_array(fftw_complex *complex_array, unsigned int size) {
     for (unsigned int i = 0; i < NPRINTS; ++i) {
-        printf("  %2.4f + i%2.4f\n", complex_array[i][0], complex_array[i][1]);
+        printf("  (%2.4f, %2.4fi)\n", complex_array[i][0], complex_array[i][1]);
     }
     printf("...\n");
     for (unsigned int i = size - NPRINTS; i < size; ++i) {
-        printf("  %2.4f + i%2.4f\n", complex_array[i][0], complex_array[i][1]);
+        printf("  (%2.4f, %2.4fi)\n", complex_array[i][0], complex_array[i][1]);
     }
 }
 
@@ -90,6 +90,7 @@ float run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     // Clean up
     fftw_destroy_plan(plan_fft);
     fftw_free(complex_data);
+    fftw_cleanup();
 
     return elapsed_time;
 }
