@@ -6,7 +6,6 @@
 
 #define PRINT_FLAG 1
 #define NPRINTS 5  // print size
-#define IFFT_FLAG 0
 
 void printf_fftw_cmplx_array(fftw_complex *complex_array, unsigned int size) {
     for (unsigned int i = 0; i < NPRINTS; ++i) {
@@ -22,9 +21,8 @@ float run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     srand(2025);
 
     // Declaration
-    fftw_complex *complex_samples, *new_complex_samples;
-    fftw_complex *complex_freq;
-    fftw_plan plan_fft, plan_ifft;
+    fftw_complex *complex_data;
+    fftw_plan plan_fft;
     
     unsigned int element_size = nx * ny * nz;
     size_t size = sizeof(fftw_complex) * element_size;
@@ -33,27 +31,25 @@ float run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     float elapsed_time;
 
     // Allocate memory for input and output arrays
-    complex_samples = (fftw_complex *)fftw_malloc(size);
-    complex_freq = (fftw_complex *)fftw_malloc(size);
-    if (IFFT_FLAG) {new_complex_samples = (fftw_complex *)fftw_malloc(size);}
+    complex_data = (fftw_complex *)fftw_malloc(size);
 
     // Initialize input complex signal
     for (unsigned int i = 0; i < element_size; ++i) {
-        complex_samples[i][0] = rand() / (float)RAND_MAX;
-        complex_samples[i][1] = 0;
+        complex_data[i][0] = rand() / (float)RAND_MAX;
+        complex_data[i][1] = 0;
     }
 
     // Print input stuff
     if (PRINT_FLAG) {
         printf("Complex data...\n");
-        printf_fftw_cmplx_array(complex_samples, element_size);
+        printf_fftw_cmplx_array(complex_data, element_size);
     }
 
     // Start time
     start = clock();
 
     // Setup the FFT plan
-    plan_fft = fftw_plan_dft_3d(nx, ny, nz, complex_samples, complex_freq, FFTW_FORWARD, FFTW_ESTIMATE);
+    plan_fft = fftw_plan_dft_3d(nx, ny, nz, complex_data, complex_data, FFTW_FORWARD, FFTW_ESTIMATE);
 
     // Execute a complex-to-complex 3D FFT
     fftw_execute(plan_fft);
@@ -61,31 +57,31 @@ float run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     // End time
     stop = clock();
 
-    if (IFFT_FLAG) {
-        // Setup the IFFT plan
-        plan_ifft = fftw_plan_dft_3d(nx, ny, nz, complex_freq, new_complex_samples, FFTW_BACKWARD, FFTW_ESTIMATE);
+    // if (IFFT_FLAG) {
+    //     // Setup the IFFT plan
+    //     plan_ifft = fftw_plan_dft_3d(nx, ny, nz, complex_freq, new_complex_samples, FFTW_BACKWARD, FFTW_ESTIMATE);
 
-        // Execute a complex-to-complex 3D IFFT
-        fftw_execute(plan_ifft);
+    //     // Execute a complex-to-complex 3D IFFT
+    //     fftw_execute(plan_ifft);
 
-        // Normalize
-        for (unsigned int i = 0; i < element_size; ++i) {
-            new_complex_samples[i][0] /= (float)element_size;
-            new_complex_samples[i][1] /= (float)element_size;
-        }
-    }
+    //     // Normalize
+    //     for (unsigned int i = 0; i < element_size; ++i) {
+    //         new_complex_samples[i][0] /= (float)element_size;
+    //         new_complex_samples[i][1] /= (float)element_size;
+    //     }
+    // }
 
     // Print output stuff
-    if (PRINT_FLAG && IFFT_FLAG) {
-        printf("Complex samples after FFT and IFFT...\n");
-        for (unsigned int i = 0; i < NPRINTS; ++i) {
-            if (IFFT_FLAG)
-            printf("  %2.4f + i%2.4f -> %2.4f + i%2.4f\n", complex_samples[i][0], complex_samples[i][1], new_complex_samples[i][0], new_complex_samples[i][1]);
-        }
-    }
+    // if (PRINT_FLAG && IFFT_FLAG) {
+    //     printf("Complex samples after FFT and IFFT...\n");
+    //     for (unsigned int i = 0; i < NPRINTS; ++i) {
+    //         if (IFFT_FLAG)
+    //         printf("  %2.4f + i%2.4f -> %2.4f + i%2.4f\n", complex_samples[i][0], complex_samples[i][1], new_complex_samples[i][0], new_complex_samples[i][1]);
+    //     }
+    // }
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
-        printf_fftw_cmplx_array(complex_freq, element_size);
+        printf_fftw_cmplx_array(complex_data, element_size);
     }
 
     // Compute elapsed time
@@ -93,10 +89,7 @@ float run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
 
     // Clean up
     fftw_destroy_plan(plan_fft);
-    fftw_destroy_plan(plan_ifft);
-    if (IFFT_FLAG) {fftw_free(new_complex_samples);}
-    fftw_free(complex_samples);
-    fftw_free(complex_freq);
+    fftw_free(complex_data);
 
     return elapsed_time;
 }

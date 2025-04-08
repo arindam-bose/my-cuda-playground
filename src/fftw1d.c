@@ -21,8 +21,7 @@ void printf_fftw_cmplx_array(fftw_complex *complex_array, unsigned int size) {
 float run_test_fftw_1d(unsigned int nx) {
     // Declaration
     float *samples;
-    fftw_complex *complex_samples;
-    fftw_complex *complex_freq;
+    fftw_complex *complex_data;
     fftw_plan plan;
 
     size_t size = sizeof(fftw_complex) * nx;
@@ -32,8 +31,7 @@ float run_test_fftw_1d(unsigned int nx) {
 
     // Allocate memory for input and output arrays
     samples = (float *)malloc(sizeof(float) * nx);
-    complex_samples = (fftw_complex *)fftw_malloc(size);
-    complex_freq = (fftw_complex *)fftw_malloc(size);
+    complex_data = (fftw_complex *)fftw_malloc(size);
 
     // Input signal generation using cos(x)
     double delta = M_PI / 20.0;
@@ -43,8 +41,8 @@ float run_test_fftw_1d(unsigned int nx) {
 
     // Convert to a complex signal
     for (unsigned int i = 0; i < nx; ++i) {
-        complex_samples[i][0] = samples[i];
-        complex_samples[i][1] = 0;
+        complex_data[i][0] = samples[i];
+        complex_data[i][1] = 0;
     }
 
     // Print input stuff
@@ -54,14 +52,14 @@ float run_test_fftw_1d(unsigned int nx) {
             printf("  %2.4f\n", samples[i]);
         }
         printf("Complex data...\n");
-        printf_fftw_cmplx_array(complex_samples, nx);
+        printf_fftw_cmplx_array(complex_data, nx);
     }
 
     // Start time
     start = clock();
 
     // Setup the FFT plan
-    plan = fftw_plan_dft_1d(nx, complex_samples, complex_freq, FFTW_FORWARD, FFTW_ESTIMATE);
+    plan = fftw_plan_dft_1d(nx, complex_data, complex_data, FFTW_FORWARD, FFTW_ESTIMATE);
 
     // Execute a complex-to-complex 1D FFT
     fftw_execute(plan);
@@ -72,7 +70,7 @@ float run_test_fftw_1d(unsigned int nx) {
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
-        printf_fftw_cmplx_array(complex_freq, nx);
+        printf_fftw_cmplx_array(complex_data, nx);
     }
 
     // Compute elapsed time
@@ -80,8 +78,7 @@ float run_test_fftw_1d(unsigned int nx) {
 
     // Clean up
     fftw_destroy_plan(plan);
-    fftw_free(complex_samples);
-    fftw_free(complex_freq);
+    fftw_free(complex_data);
     free(samples);
 
     return elapsed_time;

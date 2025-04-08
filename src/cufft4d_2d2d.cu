@@ -22,10 +22,8 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
     srand(2025);
 
     // Declaration
-    cufftComplex *complex_samples;
-    cufftComplex *complex_freq;
-    cufftComplex *d_complex_samples;
-    cufftComplex *d_complex_freq;
+    cufftComplex *complex_data;
+    cufftComplex *d_complex_data;
     cufftHandle plan_xy, plan_zw;
 
     unsigned int element_size = nx * ny * nz * nw;
@@ -35,19 +33,18 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
     float elapsed_time;
 
     // Allocate memory for the variables on the host
-    complex_samples = (cufftComplex *)malloc(size);
-    complex_freq = (cufftComplex *)malloc(size);
+    complex_data = (cufftComplex *)malloc(size);
 
     // Initialize input complex signal
     for (unsigned int i = 0; i < element_size; ++i) {
-        complex_samples[i].x = rand() / (float)RAND_MAX;
-        complex_samples[i].y = 0;
+        complex_data[i].x = rand() / (float)RAND_MAX;
+        complex_data[i].y = 0;
     }
 
     // Print input stuff
     if (PRINT_FLAG) {
         printf("Complex data...\n");
-        printf_cufft_cmplx_array(complex_samples, element_size);
+        printf_cufft_cmplx_array(complex_data, element_size);
     }
 
     // Create CUDA events
@@ -58,11 +55,10 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
     CHECK_CUDA(cudaEventRecord(start, 0));
 
     // Allocate device memory for complex signal and output frequency
-    CHECK_CUDA(cudaMalloc((void **)&d_complex_samples, size));
-    CHECK_CUDA(cudaMalloc((void **)&d_complex_freq, size));
+    CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
 
     // Copy host memory to device
-    CHECK_CUDA(cudaMemcpy(d_complex_samples, complex_samples, size, cudaMemcpyHostToDevice));
+    CHECK_CUDA(cudaMemcpy(d_complex_data, complex_data, size, cudaMemcpyHostToDevice));
 
     // -----------------------------
     // 1. 2D FFT in (X, Y) direction
@@ -83,7 +79,7 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
                               onembed_xy, ostride_xy, odist_xy,
                               CUFFT_C2C, batch_xy));
 
-    CHECK_CUFFT(cufftExecC2C(plan_xy, d_complex_samples, d_complex_freq, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftExecC2C(plan_xy, d_complex_data, d_complex_data, CUFFT_FORWARD));
 
     // ----------------------------------
     // 2. 2D FFT in (Z, W) direction
@@ -106,10 +102,10 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
                               onembed_zw, ostride_zw, odist_zw,
                               CUFFT_C2C, batch_zw));
 
-    CHECK_CUFFT(cufftExecC2C(plan_zw, d_complex_freq, d_complex_freq, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftExecC2C(plan_zw, d_complex_data, d_complex_data, CUFFT_FORWARD));
 
     // Retrieve the results into host memory
-    CHECK_CUDA(cudaMemcpy(complex_freq, d_complex_freq, size, cudaMemcpyDeviceToHost));
+    CHECK_CUDA(cudaMemcpy(complex_data, d_complex_data, size, cudaMemcpyDeviceToHost));
 
     // Record the stop event
     CHECK_CUDA(cudaEventRecord(stop, 0));
@@ -118,22 +114,19 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
-        printf_cufft_cmplx_array(complex_freq, element_size);
+        printf_cufft_cmplx_array(complex_data, element_size);
     }
 
     // Compute elapsed time
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
-    // printf("%.6f\n", elapsed_time * 1e-3);
 
     // Cleanup
-    CHECK_CUDA(cudaFree(d_complex_freq));
-    CHECK_CUDA(cudaFree(d_complex_samples));
+    CHECK_CUDA(cudaFree(d_complex_data));
     CHECK_CUDA(cudaEventDestroy(start));
     CHECK_CUDA(cudaEventDestroy(stop));
     CHECK_CUFFT(cufftDestroy(plan_xy));
     CHECK_CUFFT(cufftDestroy(plan_zw));
-    free(complex_freq);
-    free(complex_samples);
+    free(complex_data);
 
     return elapsed_time * 1e-3;
 }

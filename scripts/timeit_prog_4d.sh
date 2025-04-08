@@ -7,6 +7,8 @@ if [ -z "$1" ]; then
     echo "     $0 cufft31" >&2
     echo "     $0 cufft22" >&2
     echo "     $0 fftw" >&2
+    echo "     $0 fftw31" >&2
+    echo "     $0 fftw22" >&2
     exit 2
 elif [ "$1" == "cufft4" ]; then
     echo "Generating binary for cufft4"
@@ -28,8 +30,18 @@ elif [ "$1" == "fftw" ]; then
     PROGRAM=fftw4d
     ARCH=$(uname -m)
     gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
+elif [ "$1" == "fftw31" ]; then
+    echo "Generating binary for fftw"
+    PROGRAM=fftw4d_3d1d
+    ARCH=$(uname -m)
+    gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
+elif [ "$1" == "fftw22" ]; then
+    echo "Generating binary for fftw"
+    PROGRAM=fftw4d_2d2d
+    ARCH=$(uname -m)
+    gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
 else
-    echo "First argument should be {cufft4|cufft31|cufft22|fftw}"
+    echo "First argument should be {cufft4|cufft31|cufft22|fftw|fftw31|fftw22}"
     exit 2
 fi
 

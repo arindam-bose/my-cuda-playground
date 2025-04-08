@@ -5,7 +5,7 @@
 #include <fftw3.h>
 
 #define PRINT_FLAG 1
-#define NPRINTS 16  // print size
+#define NPRINTS 5  // print size
 
 void printf_fftw_cmplx_array(fftw_complex *complex_array, unsigned int size) {
     for (unsigned int i = 0; i < NPRINTS; ++i) {
@@ -21,8 +21,7 @@ float run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
     srand(2025);
 
     // Declaration
-    fftw_complex *complex_samples;
-    fftw_complex *complex_freq;
+    fftw_complex *complex_data;
     fftw_plan plan;
 
     unsigned int element_size = nx * ny * nz * nw;
@@ -32,26 +31,25 @@ float run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
     float elapsed_time;
 
     // Allocate memory for input and output arrays
-    complex_samples = (fftw_complex *)fftw_malloc(size);
-    complex_freq = (fftw_complex *)fftw_malloc(size);
+    complex_data = (fftw_complex *)fftw_malloc(size);
 
     // Initialize input complex signal
     for (unsigned int i = 0; i < element_size; ++i) {
-        complex_samples[i][0] = rand() / (float)RAND_MAX;
-        complex_samples[i][1] = 0;
+        complex_data[i][0] = rand() / (float)RAND_MAX;
+        complex_data[i][1] = 0;
     }
 
     // Print input stuff
     if (PRINT_FLAG) {
         printf("Complex data...\n");
-        printf_fftw_cmplx_array(complex_samples, element_size);
+        printf_fftw_cmplx_array(complex_data, element_size);
     }
     
     // Start time
     start = clock();
 
     // Setup the FFT plan
-    plan = fftw_plan_dft(4, (int[]){nx, ny, nz, nw}, complex_samples, complex_freq, FFTW_FORWARD, FFTW_ESTIMATE);
+    plan = fftw_plan_dft(4, (int[]){nx, ny, nz, nw}, complex_data, complex_data, FFTW_FORWARD, FFTW_ESTIMATE);
 
     // Execute the FFT
     fftw_execute(plan);
@@ -62,7 +60,7 @@ float run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
-        printf_fftw_cmplx_array(complex_freq, element_size);
+        printf_fftw_cmplx_array(complex_data, element_size);
     }
 
     // Compute elapsed time
@@ -70,8 +68,7 @@ float run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
 
     // Clean up
     fftw_destroy_plan(plan);
-    fftw_free(complex_samples);
-    fftw_free(complex_freq);
+    fftw_free(complex_data);
 
     return elapsed_time;
 }
