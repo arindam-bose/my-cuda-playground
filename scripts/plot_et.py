@@ -14,6 +14,8 @@ cmap =  {
     'fftw2d-aarch64':'fftw 2D: aarch64',
     'fftw3d-aarch64':'fftw 3D: aarch64',
     'fftw4d-aarch64':'fftw 4D: aarch64',
+    'fftw4d_3d1d-aarch64':'fftw 4D (3D+1D): aarch64',
+    'fftw4d_2d2d-aarch64':'fftw 4D (2D+2D): aarch64',
     'fftw1d-x86_64':'fftw 1D: x86_64',
     'fftw2d-x86_64':'fftw 2D: x86_64',
     'fftw3d-x86_64':'fftw 3D: x86_64',
