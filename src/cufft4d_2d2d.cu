@@ -67,11 +67,11 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
     temp2d_xy = (cufftComplex *)malloc(size_xy);
     CHECK_CUDA(cudaMalloc((void **)&d_temp2d_xy, size_xy));
     CHECK_CUFFT(cufftPlan2d(&plan2d_xy, nx, ny, CUFFT_C2C));
-    for (int z = 0; z < nz; z++) {
-        for (int w = 0; w < nw; w++) {
+    for (int z = 0; z < nz; ++z) {
+        for (int w = 0; w < nw; ++w) {
             // Extract 2D slice
-            for (int x = 0; x < nx; x++) {
-                for (int y = 0; y < ny; y++) {
+            for (int x = 0; x < nx; ++x) {
+                for (int y = 0; y < ny; ++y) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
                     temp2d_xy[x * ny + y].x = complex_data[idx].x;
                     temp2d_xy[x * ny + y].y = complex_data[idx].y;
@@ -83,8 +83,8 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
             CHECK_CUDA(cudaMemcpy(temp2d_xy, d_temp2d_xy, size_xy, cudaMemcpyDeviceToHost));
             
             // Copy back
-            for (int x = 0; x < nx; x++) {
-                for (int y = 0; y < ny; y++) {
+            for (int x = 0; x < nx; ++x) {
+                for (int y = 0; y < ny; ++y) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
                     complex_data[idx].x = temp2d_xy[x * ny + y].x;
                     complex_data[idx].y = temp2d_xy[x * ny + y].y;
@@ -101,11 +101,11 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
     temp2d_zw = (cufftComplex *)malloc(size_zw);
     CHECK_CUDA(cudaMalloc((void **)&d_temp2d_zw, size_zw));
     CHECK_CUFFT(cufftPlan2d(&plan2d_zw, nz, nw, CUFFT_C2C));
-    for (int x = 0; x < nx; x++) {
-        for (int y = 0; y < ny; y++) {
+    for (int x = 0; x < nx; ++x) {
+        for (int y = 0; y < ny; ++y) {
             // Extract 2D slice
-            for (int z = 0; z < nz; z++) {
-                for (int w = 0; w < nw; w++) {
+            for (int z = 0; z < nz; ++z) {
+                for (int w = 0; w < nw; ++w) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
                     temp2d_zw[z * nw + w].x = complex_data[idx].x;
                     temp2d_zw[z * nw + w].y = complex_data[idx].y;
@@ -117,8 +117,8 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
             CHECK_CUDA(cudaMemcpy(temp2d_zw, d_temp2d_zw, size_zw, cudaMemcpyDeviceToHost));
             
             // Copy back
-            for (int z = 0; z < nz; z++) {
-                for (int w = 0; w < nw; w++) {
+            for (int z = 0; z < nz; ++z) {
+                for (int w = 0; w < nw; ++w) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
                     complex_data[idx].x = temp2d_zw[z * nw + w].x;
                     complex_data[idx].y = temp2d_zw[z * nw + w].y;

@@ -23,11 +23,16 @@ float run_test_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     
     // Declaration
     cufftComplex *complex_data;
-    cufftComplex *d_complex_data;
+    cufftComplex *temp3d, *temp1d;
+    cufftComplex *d_temp3d, *d_temp1d;
     cufftHandle plan3d, plan1d;
 
     unsigned int element_size = nx * ny * nz * nw;
     size_t size = sizeof(cufftComplex) * element_size;
+
+    unsigned int element_size_xyz = nx * ny * nz;
+    size_t size_xyz = sizeof(cufftComplex) * element_size_xyz;
+    size_t size_w = sizeof(cufftComplex) * nw;
 
     cudaEvent_t start, stop;
     float elapsed_time;
@@ -54,41 +59,79 @@ float run_test_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     // Record the start event
     CHECK_CUDA(cudaEventRecord(start, 0));
 
-    // Allocate device memory for complex signal and output frequency
-    CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
+    // // Allocate device memory for complex signal and output frequency
+    // CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
 
-    // Copy host memory to device
-    CHECK_CUDA(cudaMemcpy(d_complex_data, complex_data, size, cudaMemcpyHostToDevice));
+    // // Copy host memory to device
+    // CHECK_CUDA(cudaMemcpy(d_complex_data, complex_data, size, cudaMemcpyHostToDevice));
 
     // -----------------------
     // 1. Perform 3D FFTs over each W slice (W batches of 3D volumes)
     // -----------------------
+    temp3d = (cufftComplex *)malloc(size_xyz);
+    CHECK_CUDA(cudaMalloc((void **)&d_temp3d, size_xyz));
     CHECK_CUFFT(cufftPlan3d(&plan3d, nx, ny, nz, CUFFT_C2C));
     for (int w = 0; w < nw; ++w) {
-        size_t offset = w * nx * ny * nz;
-        CHECK_CUFFT(cufftExecC2C(plan3d, d_complex_data + offset, d_complex_data + offset, CUFFT_FORWARD));
+        // Copy the W-slice into tmp_3d
+        for (int x = 0; x < nx; ++x) {
+            for (int y = 0; y < ny; ++y) {
+                for (int z = 0; z < nz; ++z) {
+                    int src_idx = (((x * ny + y) * nz + z) * nw) + w;
+                    int dst_idx = ((x * ny + y) * nz) + z;
+                    temp3d[dst_idx].x = complex_data[src_idx].x;
+                    temp3d[dst_idx].y = complex_data[src_idx].y;
+                }
+            }
+        }
+
+        CHECK_CUDA(cudaMemcpy(d_temp3d, temp3d, size_xyz, cudaMemcpyHostToDevice));
+        CHECK_CUFFT(cufftExecC2C(plan3d, d_temp3d, d_temp3d, CUFFT_FORWARD));
+        CHECK_CUDA(cudaMemcpy(temp3d, d_temp3d, size_xyz, cudaMemcpyDeviceToHost));
+
+        // Copy results back to data
+        for (int x = 0; x < nx; ++x) {
+            for (int y = 0; y < ny; ++y) {
+                for (int z = 0; z < nz; ++z) {
+                    int dst_idx = (((x * ny + y) * nz + z) * nw) + w;
+                    int src_idx = ((x * ny + y) * nz) + z;
+                    complex_data[dst_idx].x = temp3d[src_idx].x;
+                    complex_data[dst_idx].y = temp3d[src_idx].y;
+                }
+            }
+        }
     }
 
     // -----------------------
     // 2. Perform 1D FFT along W dimension
     // -----------------------
     // There are NX*NY*NZ such transforms (one for each (x,y,z) point)
-    int n[1] = { (int)nw };
-    int batch = nx * ny * nz;
-    int embed[1] = { (int)nw };
-    int stride = 1;
-    int dist = nw;
+    temp1d = (cufftComplex *)malloc(size_w);
+    CHECK_CUDA(cudaMalloc((void **)&d_temp1d, size_w));
+    CHECK_CUFFT(cufftPlan1d(&plan1d, nx, CUFFT_C2C, 1));
+    for (int x = 0; x < nx; ++x) {
+        for (int y = 0; y < ny; ++y) {
+            for (int z = 0; z < nz; ++z) {
+                // Copy W vector
+                for (int w = 0; w < nw; ++w) {
+                    int idx = (((x * ny + y) * nz + z) * nw) + w;
+                    temp1d[w].x = complex_data[idx].x;
+                    temp1d[w].y = complex_data[idx].y;
+                }
 
-    CHECK_CUFFT(cufftPlanMany(&plan1d, 1, n,       // rank, dimensions
-                                embed, stride, dist,
-                                embed, stride, dist,
-                                CUFFT_C2C, batch));
+                // FFT along W
+                CHECK_CUDA(cudaMemcpy(d_temp1d, temp1d, size_w, cudaMemcpyHostToDevice));
+                CHECK_CUFFT(cufftExecC2C(plan1d, d_temp1d, d_temp1d, CUFFT_FORWARD));
+                CHECK_CUDA(cudaMemcpy(temp1d, d_temp1d, size_w, cudaMemcpyDeviceToHost));
 
-    // Execute the 1D FFTs (in-place)
-    CHECK_CUFFT(cufftExecC2C(plan1d, d_complex_data, d_complex_data, CUFFT_FORWARD));
-
-    // Retrieve the results into host memory
-    CHECK_CUDA(cudaMemcpy(complex_data, d_complex_data, size, cudaMemcpyDeviceToHost));
+                // Copy back
+                for (int w = 0; w < nw; ++w) {
+                    int idx = (((x * ny + y) * nz + z) * nw) + w;
+                    complex_data[idx].x = temp1d[w].x;
+                    complex_data[idx].y = temp1d[w].y;
+                }
+            }
+        }
+    }
 
     // Record the stop event
     CHECK_CUDA(cudaEventRecord(stop, 0));
@@ -102,14 +145,16 @@ float run_test_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, 
 
     // Compute elapsed time
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
-    // printf("%.6f\n", elapsed_time * 1e-3);
 
     // Cleanup
-    CHECK_CUDA(cudaFree(d_complex_data));
     CHECK_CUDA(cudaEventDestroy(start));
     CHECK_CUDA(cudaEventDestroy(stop));
     CHECK_CUFFT(cufftDestroy(plan3d));
     CHECK_CUFFT(cufftDestroy(plan1d));
+    CHECK_CUDA(cudaFree(d_temp3d));
+    CHECK_CUDA(cudaFree(d_temp1d));
+    free(temp3d);
+    free(temp1d);
     free(complex_data);
 
     return elapsed_time * 1e-3;

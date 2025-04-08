@@ -52,11 +52,11 @@ int run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, uns
     fftw_plan plan3d;
     fftw_complex *tmp_3d = fftw_malloc(sizeof(fftw_complex) * nx * ny * nz);
 
-    for (int w = 0; w < nw; w++) {
+    for (int w = 0; w < nw; ++w) {
         // Copy the W-slice into tmp_3d
-        for (int x = 0; x < nx; x++) {
-            for (int y = 0; y < ny; y++) {
-                for (int z = 0; z < nz; z++) {
+        for (int x = 0; x < nx; ++x) {
+            for (int y = 0; y < ny; ++y) {
+                for (int z = 0; z < nz; ++z) {
                     int src_idx = (((x * ny + y) * nz + z) * nw) + w;
                     int dst_idx = ((x * ny + y) * nz) + z;
                     tmp_3d[dst_idx][0] = complex_data[src_idx][0];
@@ -70,9 +70,9 @@ int run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, uns
         fftw_destroy_plan(plan3d);
 
         // Copy results back to data
-        for (int x = 0; x < nx; x++) {
-            for (int y = 0; y < ny; y++) {
-                for (int z = 0; z < nz; z++) {
+        for (int x = 0; x < nx; ++x) {
+            for (int y = 0; y < ny; ++y) {
+                for (int z = 0; z < nz; ++z) {
                     int dst_idx = (((x * ny + y) * nz + z) * nw) + w;
                     int src_idx = ((x * ny + y) * nz) + z;
                     complex_data[dst_idx][0] = tmp_3d[src_idx][0];
@@ -88,11 +88,11 @@ int run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, uns
     fftw_complex *tmp_1d = fftw_malloc(sizeof(fftw_complex) * nw);
     fftw_plan plan1d;
 
-    for (int x = 0; x < nx; x++) {
-        for (int y = 0; y < ny; y++) {
-            for (int z = 0; z < nz; z++) {
+    for (int x = 0; x < nx; ++x) {
+        for (int y = 0; y < ny; ++y) {
+            for (int z = 0; z < nz; ++z) {
                 // Copy W vector
-                for (int w = 0; w < nw; w++) {
+                for (int w = 0; w < nw; ++w) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
                     tmp_1d[w][0] = complex_data[idx][0];
                     tmp_1d[w][1] = complex_data[idx][1];
@@ -104,7 +104,7 @@ int run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, uns
                 fftw_destroy_plan(plan1d);
 
                 // Copy back
-                for (int w = 0; w < nw; w++) {
+                for (int w = 0; w < nw; ++w) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
                     complex_data[idx][0] = tmp_1d[w][0];
                     complex_data[idx][1] = tmp_1d[w][1];

@@ -57,11 +57,11 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
     // ---- 1. 2D FFT over (X, Y) for each Z, W ----
     temp2d_xy = fftw_malloc(size_xy);
     plan2d_xy = fftw_plan_dft_2d(nx, ny, temp2d_xy, temp2d_xy, FFTW_FORWARD, FFTW_ESTIMATE);
-    for (int z = 0; z < nz; z++) {
-        for (int w = 0; w < nw; w++) {
+    for (int z = 0; z < nz; ++z) {
+        for (int w = 0; w < nw; ++w) {
             // Extract 2D slice
-            for (int x = 0; x < nx; x++) {
-                for (int y = 0; y < ny; y++) {
+            for (int x = 0; x < nx; ++x) {
+                for (int y = 0; y < ny; ++y) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
                     temp2d_xy[x * ny + y][0] = complex_data[idx][0];
                     temp2d_xy[x * ny + y][1] = complex_data[idx][1];
@@ -69,8 +69,8 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
             }
             fftw_execute(plan2d_xy);
             // Copy back
-            for (int x = 0; x < nx; x++) {
-                for (int y = 0; y < ny; y++) {
+            for (int x = 0; x < nx; ++x) {
+                for (int y = 0; y < ny; ++y) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
                     complex_data[idx][0] = temp2d_xy[x * ny + y][0];
                     complex_data[idx][1] = temp2d_xy[x * ny + y][1];
@@ -82,11 +82,11 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
     // ---- 2. 2D FFT over (Z, W) for each X, Y ----
     temp2d_zw = fftw_malloc(size_zw);
     plan2d_zw = fftw_plan_dft_2d(nz, nw, temp2d_zw, temp2d_zw, FFTW_FORWARD, FFTW_ESTIMATE);
-    for (int x = 0; x < nx; x++) {
-        for (int y = 0; y < ny; y++) {
+    for (int x = 0; x < nx; ++x) {
+        for (int y = 0; y < ny; ++y) {
             // Extract 2D slice
-            for (int z = 0; z < nz; z++) {
-                for (int w = 0; w < nw; w++) {
+            for (int z = 0; z < nz; ++z) {
+                for (int w = 0; w < nw; ++w) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
                     temp2d_zw[z * nw + w][0] = complex_data[idx][0];
                     temp2d_zw[z * nw + w][1] = complex_data[idx][1];
@@ -94,8 +94,8 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
             }
             fftw_execute(plan2d_zw);
             // Copy back
-            for (int z = 0; z < nz; z++) {
-                for (int w = 0; w < nw; w++) {
+            for (int z = 0; z < nz; ++z) {
+                for (int w = 0; w < nw; ++w) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
                     complex_data[idx][0] = temp2d_zw[z * nw + w][0];
                     complex_data[idx][1] = temp2d_zw[z * nw + w][1];
