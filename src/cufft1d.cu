@@ -5,7 +5,7 @@
 #include <cufft.h>
 
 #define M_PI   3.14159265358979323846  /* pi */
-#define PRINT_FLAG 1
+#define PRINT_FLAG 0
 #define NPRINTS 5  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {

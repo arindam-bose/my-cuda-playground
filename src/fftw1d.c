@@ -5,7 +5,7 @@
 #include <fftw3.h>
 
 #define M_PI   3.14159265358979323846  /* pi */
-#define PRINT_FLAG 1
+#define PRINT_FLAG 0
 #define NPRINTS 5  // print size
 
 void printf_fftw_cmplx_array(fftw_complex *complex_array, unsigned int size) {

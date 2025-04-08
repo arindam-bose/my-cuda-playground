@@ -17,12 +17,13 @@ void printf_fftw_cmplx_array(fftw_complex *complex_array, unsigned int size) {
     }
 }
 
-int run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
+float run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
     srand(2025);
 
     // Declaration
     fftw_complex *complex_data;
-    fftw_plan plan;
+    fftw_complex *tmp_3d, *tmp_1d;
+    fftw_plan plan3d, plan1d;
 
     unsigned int element_size = nx * ny * nz * nw;
     size_t size = sizeof(fftw_complex) * element_size;
@@ -49,9 +50,8 @@ int run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, uns
     start = clock();
 
     // -------- 1. Perform 3D FFT for each W slice --------
-    fftw_plan plan3d;
-    fftw_complex *tmp_3d = fftw_malloc(sizeof(fftw_complex) * nx * ny * nz);
-
+    tmp_3d = fftw_malloc(sizeof(fftw_complex) * nx * ny * nz);
+    plan3d = fftw_plan_dft_3d(nx, ny, nz, tmp_3d, tmp_3d, FFTW_FORWARD, FFTW_ESTIMATE);
     for (int w = 0; w < nw; ++w) {
         // Copy the W-slice into tmp_3d
         for (int x = 0; x < nx; ++x) {
@@ -64,11 +64,7 @@ int run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, uns
                 }
             }
         }
-
-        plan3d = fftw_plan_dft_3d(nx, ny, nz, tmp_3d, tmp_3d, FFTW_FORWARD, FFTW_ESTIMATE);
         fftw_execute(plan3d);
-        fftw_destroy_plan(plan3d);
-
         // Copy results back to data
         for (int x = 0; x < nx; ++x) {
             for (int y = 0; y < ny; ++y) {
@@ -82,11 +78,9 @@ int run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, uns
         }
     }
 
-    fftw_free(tmp_3d);
-
     // -------- 2. Perform 1D FFT along W for each (x,y,z) --------
-    fftw_complex *tmp_1d = fftw_malloc(sizeof(fftw_complex) * nw);
-    fftw_plan plan1d;
+    tmp_1d = fftw_malloc(sizeof(fftw_complex) * nw);
+    plan1d = fftw_plan_dft_1d(nw, tmp_1d, tmp_1d, FFTW_FORWARD, FFTW_ESTIMATE);
 
     for (int x = 0; x < nx; ++x) {
         for (int y = 0; y < ny; ++y) {
@@ -99,10 +93,7 @@ int run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, uns
                 }
 
                 // FFT along W
-                plan1d = fftw_plan_dft_1d(nw, tmp_1d, tmp_1d, FFTW_FORWARD, FFTW_ESTIMATE);
                 fftw_execute(plan1d);
-                fftw_destroy_plan(plan1d);
-
                 // Copy back
                 for (int w = 0; w < nw; ++w) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
@@ -113,7 +104,8 @@ int run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, uns
         }
     }
 
-    fftw_free(tmp_1d);
+    // End time
+    stop = clock();
 
     // Print input stuff
     if (PRINT_FLAG) {
@@ -121,8 +113,17 @@ int run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, uns
         printf_fftw_cmplx_array(complex_data, element_size);
     }
 
+    // Compute elapsed time
+    elapsed_time = (double)(stop - start) / CLOCKS_PER_SEC;
+
+    fftw_destroy_plan(plan3d);
+    fftw_destroy_plan(plan1d);
+    fftw_free(tmp_3d);
+    fftw_free(tmp_1d);
     fftw_free(complex_data);
     fftw_cleanup();
+
+    return elapsed_time;
 }
 
 int main(int argc, char **argv) {

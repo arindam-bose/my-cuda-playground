@@ -4,7 +4,7 @@
 #include <time.h>
 #include <fftw3.h>
 
-#define PRINT_FLAG 1
+#define PRINT_FLAG 0
 #define NPRINTS 5  // print size
 
 void printf_fftw_cmplx_array(fftw_complex *complex_array, unsigned int size) {
@@ -17,7 +17,7 @@ void printf_fftw_cmplx_array(fftw_complex *complex_array, unsigned int size) {
     }
 }
 
-int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
+float run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
     srand(2025);
 
     // Declaration
@@ -103,6 +103,7 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
             }
         }
     }
+
     // End time
     stop = clock();
 
@@ -122,6 +123,8 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
     fftw_free(temp2d_xy);
     fftw_free(temp2d_zw);
     fftw_cleanup();
+
+    return elapsed_time;
 }
 
 
