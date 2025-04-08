@@ -6,7 +6,7 @@
 #include <math.h>
 
 #define PRINT_FLAG 1
-#define NPRINTS 5  // print size
+#define NPRINTS 16  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
     for (unsigned int i = 0; i < NPRINTS; ++i) {

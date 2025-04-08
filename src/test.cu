@@ -1,68 +1,106 @@
-#include <iostream>
-#include <vector>
-#include <cmath>
+#include <stdio.h>
+#include <cuda_runtime.h>
 #include <cufft.h>
 
-// Define the dimensions of the 4D array
-#define NX 32
-#define NY 32
-#define NZ 32
-#define NW 32
+#define NX 2  // Dimension X
+#define NY 2  // Dimension Y
+#define NZ 2  // Dimension Z
+#define NW 2  // Dimension W
+
+#define TOTAL_SIZE (NX * NY * NZ * NW)
+
+#define CHECK_CUDA(call) \
+    if ((call) != cudaSuccess) { \
+        fprintf(stderr, "CUDA error at %s:%d: %s\n", __FILE__, __LINE__, cudaGetErrorString(call)); \
+        return EXIT_FAILURE; \
+    }
+
+#define CHECK_CUFFT(call) \
+    if ((call) != CUFFT_SUCCESS) { \
+        fprintf(stderr, "cuFFT error at %s:%d\n", __FILE__, __LINE__); \
+        return EXIT_FAILURE; \
+    }
 
 int main() {
-  // 1. Allocate host memory
-  std::vector<cuComplex> h_data(NX * NY * NZ * NW);
-
-  // Initialize host data (example: complex exponentials)
-  for (int w = 0; w < NW; ++w) {
-    for (int z = 0; z < NZ; ++z) {
-      for (int y = 0; y < NY; ++y) {
-        for (int x = 0; x < NX; ++x) {
-          float angle = 2.0f * M_PI * (x * 1.0f / NX + y * 2.0f / NY + z * 3.0f / NZ + w * 4.0f / NW);
-          h_data[w * NZ * NY * NX + z * NY * NX + y * NX + x] = cuComplex{cosf(angle), sinf(angle)};
-        }
-      }
+    srand(2025);
+    cufftComplex *h_data, *d_data;
+    cufftHandle plan;
+    
+    h_data = (cufftComplex *)malloc(sizeof(cufftComplex) * TOTAL_SIZE);
+    for (unsigned int i = 0; i < TOTAL_SIZE; ++i) {
+        h_data[i].x = rand() / (float)RAND_MAX;
+        h_data[i].y = 0;
     }
-  }
+    printf("Input...\n");
+    for (unsigned int i = 0; i < 16; ++i) {
+        printf("  %2.4f + i%2.4f\n", h_data[i].x, h_data[i].y);
+    }
 
-  // 2. Allocate device memory
-  cuComplex *d_data;
-  cudaMalloc((void**)&d_data, NX * NY * NZ * NW * sizeof(cuComplex));
+    // Allocate memory
+    CHECK_CUDA(cudaMalloc(&d_data, sizeof(cufftComplex) * TOTAL_SIZE));
 
-  // 3. Copy data from host to device
-  cudaMemcpy(d_data, h_data.data(), NX * NY * NZ * NW * sizeof(cuComplex), cudaMemcpyHostToDevice);
+    CHECK_CUDA(cudaMemcpy(d_data, h_data, sizeof(cufftComplex) * TOTAL_SIZE, cudaMemcpyHostToDevice));
 
-  // 4. Create CUFFT plan for 4D FFT
-  cufftHandle plan4D;
-  int n[4] = {NX, NY, NZ, NW};
-  cufftPlanMany(
-      &plan4D,
-      4,      // rank
-      n,      // n (dimensions)
-      nullptr, // inembed (if stride is used)
-      1,      // istride
-      0,      // idist
-      nullptr, // onembed (if stride is used)
-      1,      // ostride
-      0,      // odist
-      CUFFT_C2C, // type
-      1       // batch
-  );
+    // Initialize plan dimensions
+    int rank = 1;       // We're doing 1D FFTs
+    int n[1];           // FFT length
+    int istride = 1;    
+    int idist;
+    int inembed[1];
 
-  // 5. Execute the 4D FFT
-  cufftExecC2C(plan4D, d_data, d_data, CUFFT_FORWARD);
+    // ------------ FFT along W --------------
+    n[0] = NW;
+    inembed[0] = NW;
+    idist = 1;
+    CHECK_CUFFT(cufftPlanMany(&plan, rank, n, 
+                              inembed, istride, idist,
+                              inembed, istride, idist,
+                              CUFFT_C2C, NX * NY * NZ));
+    CHECK_CUFFT(cufftExecC2C(plan, d_data, d_data, CUFFT_FORWARD));
+    cufftDestroy(plan);
 
-  // 6. Copy result back to host (optional)
-  std::vector<cuComplex> h_result(NX * NY * NZ * NW);
-  cudaMemcpy(h_result.data(), d_data, NX * NY * NZ * NW * sizeof(cuComplex), cudaMemcpyDeviceToHost);
+    // ------------ FFT along Z --------------
+    n[0] = NZ;
+    inembed[0] = NZ * NW;
+    idist = NW;
+    CHECK_CUFFT(cufftPlanMany(&plan, rank, n,
+                              inembed, istride, idist,
+                              inembed, istride, idist,
+                              CUFFT_C2C, NX * NY));
+    CHECK_CUFFT(cufftExecC2C(plan, d_data, d_data, CUFFT_FORWARD));
+    cufftDestroy(plan);
 
-  // 7. Clean up
-  cufftDestroy(plan4D);
-  cudaFree(d_data);
+    // ------------ FFT along Y --------------
+    n[0] = NY;
+    inembed[0] = NY * NZ * NW;
+    idist = NZ * NW;
+    CHECK_CUFFT(cufftPlanMany(&plan, rank, n,
+                              inembed, istride, idist,
+                              inembed, istride, idist,
+                              CUFFT_C2C, NX));
+    CHECK_CUFFT(cufftExecC2C(plan, d_data, d_data, CUFFT_FORWARD));
+    cufftDestroy(plan);
 
-  std::cout << "4D FFT completed successfully." << std::endl;
+    // ------------ FFT along X --------------
+    n[0] = NX;
+    inembed[0] = NX * NY * NZ * NW;
+    idist = NY * NZ * NW;
+    CHECK_CUFFT(cufftPlanMany(&plan, rank, n,
+                              inembed, istride, idist,
+                              inembed, istride, idist,
+                              CUFFT_C2C, 1));
+    CHECK_CUFFT(cufftExecC2C(plan, d_data, d_data, CUFFT_FORWARD));
+    cufftDestroy(plan);
 
-  // You can now process or verify the results in h_result
+    CHECK_CUDA(cudaMemcpy(h_data, d_data, sizeof(cufftComplex) * TOTAL_SIZE, cudaMemcpyDeviceToHost));
 
-  return 0;
+    printf("Output...\n");
+    for (unsigned int i = 0; i < 16; ++i) {
+        printf("  %2.4f + i%2.4f\n", h_data[i].x, h_data[i].y);
+    }
+
+    CHECK_CUDA(cudaFree(d_data));
+
+    printf("4D FFT complete using chained 1D FFTs.\n");
+    return 0;
 }

@@ -18,11 +18,23 @@ void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
 }
 
 // Function to execute 1D FFT along a specific dimension
-void execute_cufft1d(cufftComplex *d_idata, cufftComplex *d_odata, int dim_size, int batch, int stride, int dist) {
+// void execute_cufft1d(cufftComplex *d_idata, cufftComplex *d_odata, int dim_size, int batch, int stride, int dist) {
+//     cufftHandle plan;
+//     CHECK_CUFFT(cufftPlanMany(&plan, 1, &dim_size, 
+//                                 NULL, stride, dist, 
+//                                 NULL, stride, dist, 
+//                                 CUFFT_C2C, batch));
+
+//     // Perform FFT
+//     CHECK_CUFFT(cufftExecC2C(plan, d_idata, d_odata, CUFFT_FORWARD));
+//     CHECK_CUFFT(cufftDestroy(plan));
+// }
+
+void execute_cufft1d(cufftComplex *d_idata, cufftComplex *d_odata, int *dim, int *embed, int stride, int dist, int batch) {
     cufftHandle plan;
-    CHECK_CUFFT(cufftPlanMany(&plan, 1, &dim_size, 
-                                NULL, stride, dist, 
-                                NULL, stride, dist, 
+    CHECK_CUFFT(cufftPlanMany(&plan, 1, dim, 
+                                embed, stride, dist, 
+                                embed, stride, dist, 
                                 CUFFT_C2C, batch));
 
     // Perform FFT
@@ -80,30 +92,35 @@ float run_test_cufft_4d_4x1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     // execute_cufft1d(d_complex_freq, d_complex_freq, ny, nx * nz * nw, nx, ny);           // FFT along Y
     // execute_cufft1d(d_complex_freq, d_complex_freq, nz, nx * ny * nw, nx * ny, nz);      // FFT along Z
     // execute_cufft1d(d_complex_freq, d_complex_freq, nw, nx * ny * nz, nx * ny * nz, nw); // FFT along W
+    // int n[1];           // FFT length
+    // int stride = 1;    
+    // int dist;
+    // int embed[1];
+
+    // n[0] = nx; embed[0] = nx * ny * nz * nw; dist = ny * nz * nw;
+    // execute_cufft1d(d_complex_samples, d_complex_freq, n, embed, stride, dist, 1);                         // FFT along X
+    // n[0] = ny; embed[0] = ny * nz * nw; dist = nz * nw;
+    // execute_cufft1d(d_complex_freq, d_complex_freq, n, embed, stride, dist, nx);                        // FFT along Y
+    // n[0] = nz; embed[0] = nz * nw; dist = nw;
+    // execute_cufft1d(d_complex_freq, d_complex_freq, n, embed, stride, dist, nx * ny);                   // FFT along Z
+    // n[0] = nw; embed[0] = nw; dist = 1;
+    // execute_cufft1d(d_complex_freq, d_complex_freq, n, embed, stride, dist, nx * ny * nz);           // FFT along W
 
 
+    cufftHandle plan;
+    int n[4] = {nw, nz, ny, nx};
+    CHECK_CUFFT(cufftPlanMany(
+        &plan,
+        4, // Number of dimensions
+        n, // Dimensions of the array (in reverse order for CUFFT)
+        NULL, 1, 0,             // Input strides and embed
+        NULL, 1, 0,             // Output strides and embed
+        CUFFT_C2C,              // Transform type: complex-to-complex
+        1                       // Number of transforms (batch size)
+    ));
 
-
-    cufftHandle plan4D;
-    int n[4] = {nx, ny, nz, nw};
-    cufftPlanMany(
-        &plan4D,
-        4,      // rank
-        n,      // n (dimensions)
-        nullptr, // inembed (if stride is used)
-        1,      // istride
-        0,      // idist
-        nullptr, // onembed (if stride is used)
-        1,      // ostride
-        0,      // odist
-        CUFFT_C2C, // type
-        1       // batch
-    );
-
-    // 5. Execute the 4D FFT
-    cufftExecC2C(plan4D, d_complex_samples, d_complex_freq, CUFFT_FORWARD);
-
-
+    // Execute the forward 4D FFT
+    CHECK_CUFFT(cufftExecC2C(plan, d_complex_samples, d_complex_freq, CUFFT_FORWARD));
 
 
     // Retrieve the results into host memory

@@ -5,6 +5,7 @@ if [ -z "$1" ]; then
     echo "This script should be called with atleast one argument:" >&2
     echo "e.g. $0 cufft4" >&2
     echo "     $0 cufft31" >&2
+    echo "     $0 cufft22" >&2
     echo "     $0 fftw" >&2
     exit 2
 elif [ "$1" == "cufft4" ]; then
@@ -17,13 +18,18 @@ elif [ "$1" == "cufft31" ]; then
     PROGRAM=cufft4d_3d1d
     ARCH="DUMMY"
     nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
+elif [ "$1" == "cufft22" ]; then
+    echo "Generating binary for cufft22"
+    PROGRAM=cufft4d_2d2d
+    ARCH="DUMMY"
+    nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
 elif [ "$1" == "fftw" ]; then
     echo "Generating binary for fftw"
     PROGRAM=fftw4d
     ARCH=$(uname -m)
     gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
 else
-    echo "First argument should be {cufft4|cufft31|fftw}"
+    echo "First argument should be {cufft4|cufft31|cufft22|fftw}"
     exit 2
 fi
 

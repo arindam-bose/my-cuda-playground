@@ -9,17 +9,18 @@
         fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);                 \
         fprintf(stderr, "code: %d, reason: %s\n", error,                       \
                 cudaGetErrorString(error));                                    \
+        exit(EXIT_FAILURE);                                                    \
     }                                                                          \
 }
 
 #define CHECK_CUFFT(call)                                                      \
 {                                                                              \
-    cufftResult err;                                                           \
-    if ( (err = (call)) != CUFFT_SUCCESS)                                      \
+    cufftResult error;                                                         \
+    if ( (error = (call)) != CUFFT_SUCCESS)                                      \
     {                                                                          \
-        fprintf(stderr, "Got CUFFT error %d at %s:%d\n", err, __FILE__,        \
+        fprintf(stderr, "Got CUFFT error %d at %s:%d\n", error, __FILE__,      \
                 __LINE__);                                                     \
-        exit(1);                                                               \
+        exit(EXIT_FAILURE);                                                    \
     }                                                                          \
 }
 
