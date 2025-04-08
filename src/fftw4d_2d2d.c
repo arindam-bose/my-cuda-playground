@@ -49,18 +49,18 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
     start = clock();
 
     // Temporary buffer for 2D FFTs
-    fftw_complex *temp_2d = fftw_malloc(sizeof(fftw_complex) * nx * ny);
+    fftw_complex *temp_2d_xy = fftw_malloc(sizeof(fftw_complex) * nx * ny);
 
     // ---- 1. 2D FFT over (X, Y) for each Z, W ----
-    fftw_plan plan_2d_xy = fftw_plan_dft_2d(nx, ny, temp_2d, temp_2d, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan plan_2d_xy = fftw_plan_dft_2d(nx, ny, temp_2d_xy, temp_2d_xy, FFTW_FORWARD, FFTW_ESTIMATE);
     for (int z = 0; z < nz; z++) {
         for (int w = 0; w < nw; w++) {
             // Extract 2D slice
             for (int x = 0; x < nx; x++) {
                 for (int y = 0; y < ny; y++) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
-                    temp_2d[x * ny + y][0] = complex_data[idx][0];
-                    temp_2d[x * ny + y][1] = complex_data[idx][1];
+                    temp_2d_xy[x * ny + y][0] = complex_data[idx][0];
+                    temp_2d_xy[x * ny + y][1] = complex_data[idx][1];
                 }
             }
             fftw_execute(plan_2d_xy);
@@ -68,8 +68,8 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
             for (int x = 0; x < nx; x++) {
                 for (int y = 0; y < ny; y++) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
-                    complex_data[idx][0] = temp_2d[x * ny + y][0];
-                    complex_data[idx][1] = temp_2d[x * ny + y][1];
+                    complex_data[idx][0] = temp_2d_xy[x * ny + y][0];
+                    complex_data[idx][1] = temp_2d_xy[x * ny + y][1];
                 }
             }
         }
@@ -77,15 +77,16 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
     fftw_destroy_plan(plan_2d_xy);
 
     // ---- 2. 2D FFT over (Z, W) for each X, Y ----
-    fftw_plan plan_2d_zw = fftw_plan_dft_2d(nz, nw, temp_2d, temp_2d, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_complex *temp_2d_zw = fftw_malloc(sizeof(fftw_complex) * nz * nw);
+    fftw_plan plan_2d_zw = fftw_plan_dft_2d(nz, nw, temp_2d_zw, temp_2d_zw, FFTW_FORWARD, FFTW_ESTIMATE);
     for (int x = 0; x < nx; x++) {
         for (int y = 0; y < ny; y++) {
             // Extract 2D slice
             for (int z = 0; z < nz; z++) {
                 for (int w = 0; w < nw; w++) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
-                    temp_2d[z * nw + w][0] = complex_data[idx][0];
-                    temp_2d[z * nw + w][1] = complex_data[idx][1];
+                    temp_2d_zw[z * nw + w][0] = complex_data[idx][0];
+                    temp_2d_zw[z * nw + w][1] = complex_data[idx][1];
                 }
             }
             fftw_execute(plan_2d_zw);
@@ -93,8 +94,8 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
             for (int z = 0; z < nz; z++) {
                 for (int w = 0; w < nw; w++) {
                     int idx = (((x * ny + y) * nz + z) * nw) + w;
-                    complex_data[idx][0] = temp_2d[z * nw + w][0];
-                    complex_data[idx][1] = temp_2d[z * nw + w][1];
+                    complex_data[idx][0] = temp_2d_zw[z * nw + w][0];
+                    complex_data[idx][1] = temp_2d_zw[z * nw + w][1];
                 }
             }
         }
@@ -110,7 +111,7 @@ int run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, uns
     }
 
     fftw_free(complex_data);
-    fftw_free(temp_2d);
+    fftw_free(temp_2d_zw);
     fftw_cleanup();
 }
 
