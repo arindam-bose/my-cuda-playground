@@ -60,17 +60,17 @@ float run_test_cufft_1d(unsigned int nx) {
     CHECK_CUDA(cudaEventCreate(&start));
     CHECK_CUDA(cudaEventCreate(&stop));
 
-    // Record the start event
-    CHECK_CUDA(cudaEventRecord(start, 0));
-
     // Allocate device memory for complex signal and output frequency
     CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
 
-    // Copy host memory to device
-    CHECK_CUDA(cudaMemcpy(d_complex_data, complex_data, size, cudaMemcpyHostToDevice));
-
     // Setup the CUFFT plan
     CHECK_CUFFT(cufftPlan1d(&plan, nx, CUFFT_C2C, 1));
+
+    // Record the start event
+    CHECK_CUDA(cudaEventRecord(start, 0));
+
+    // Copy host memory to device
+    CHECK_CUDA(cudaMemcpy(d_complex_data, complex_data, size, cudaMemcpyHostToDevice));
     
     // Execute a complex-to-complex 1D FFT
     CHECK_CUFFT(cufftExecC2C(plan, d_complex_data, d_complex_data, CUFFT_FORWARD));

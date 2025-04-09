@@ -51,12 +51,16 @@ float run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, u
         printf_fftw_cmplx_array(complex_data, element_size);
     }
     
+    // Allocate memory and setup FFTs
+    temp2d_xy = fftw_malloc(size_xy);
+    plan2d_xy = fftw_plan_dft_2d(nx, ny, temp2d_xy, temp2d_xy, FFTW_FORWARD, FFTW_ESTIMATE);
+    temp2d_zw = fftw_malloc(size_zw);
+    plan2d_zw = fftw_plan_dft_2d(nz, nw, temp2d_zw, temp2d_zw, FFTW_FORWARD, FFTW_ESTIMATE);
+
     // Start time
     start = clock();
 
     // ---- 1. 2D FFT over (X, Y) for each Z, W ----
-    temp2d_xy = fftw_malloc(size_xy);
-    plan2d_xy = fftw_plan_dft_2d(nx, ny, temp2d_xy, temp2d_xy, FFTW_FORWARD, FFTW_ESTIMATE);
     for (int z = 0; z < nz; ++z) {
         for (int w = 0; w < nw; ++w) {
             // Extract 2D slice
@@ -80,8 +84,6 @@ float run_test_fftw_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, u
     }
 
     // ---- 2. 2D FFT over (Z, W) for each X, Y ----
-    temp2d_zw = fftw_malloc(size_zw);
-    plan2d_zw = fftw_plan_dft_2d(nz, nw, temp2d_zw, temp2d_zw, FFTW_FORWARD, FFTW_ESTIMATE);
     for (int x = 0; x < nx; ++x) {
         for (int y = 0; y < ny; ++y) {
             // Extract 2D slice

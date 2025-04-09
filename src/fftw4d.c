@@ -44,13 +44,13 @@ float run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
         printf("Complex data...\n");
         printf_fftw_cmplx_array(complex_data, element_size);
     }
-    
-    // Start time
-    start = clock();
 
     // Setup the FFT plan
     plan = fftw_plan_dft(4, (int[]){nx, ny, nz, nw}, complex_data, complex_data, FFTW_FORWARD, FFTW_ESTIMATE);
 
+    // Start time
+    start = clock();
+    
     // Execute the FFT
     fftw_execute(plan);
 
@@ -69,6 +69,7 @@ float run_test_fftw_4d(unsigned int nx, unsigned int ny, unsigned int nz, unsign
     // Clean up
     fftw_destroy_plan(plan);
     fftw_free(complex_data);
+    fftw_cleanup();
 
     return elapsed_time;
 }

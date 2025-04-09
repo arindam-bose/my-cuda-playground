@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 #include <cufft.h>
 
-#define PRINT_FLAG 0
+#define PRINT_FLAG 1
 #define NPRINTS 5  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
@@ -16,19 +16,6 @@ void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
         printf("  (%2.4f, %2.4fi)\n", complex_array[i].x, complex_array[i].y);
     }
 }
-
-// Function to execute 1D FFT along a specific dimension
-// void execute_cufft1d(cufftComplex *d_idata, cufftComplex *d_odata, int dim_size, int batch, int stride, int dist) {
-//     cufftHandle plan;
-//     CHECK_CUFFT(cufftPlanMany(&plan, 1, &dim_size, 
-//                                 NULL, stride, dist, 
-//                                 NULL, stride, dist, 
-//                                 CUFFT_C2C, batch));
-
-//     // Perform FFT
-//     CHECK_CUFFT(cufftExecC2C(plan, d_idata, d_odata, CUFFT_FORWARD));
-//     CHECK_CUFFT(cufftDestroy(plan));
-// }
 
 void execute_cufft1d(cufftComplex *d_idata, cufftComplex *d_odata, int *dim, int *embed, int stride, int dist, int batch) {
     cufftHandle plan;
@@ -46,10 +33,8 @@ float run_test_cufft_4d_4x1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     srand(2025);
 
     // Declaration
-    cufftComplex *complex_samples;
-    cufftComplex *complex_freq;
-    cufftComplex *d_complex_samples;
-    cufftComplex *d_complex_freq;
+    cufftComplex *complex_data;
+    cufftComplex *d_complex_data;
 
     unsigned int element_size = nx * ny * nz * nw;
     size_t size = sizeof(cufftComplex) * element_size;
@@ -58,73 +43,63 @@ float run_test_cufft_4d_4x1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     float elapsed_time;
 
     // Allocate memory for the variables on the host
-    complex_samples = (cufftComplex *)malloc(size);
-    complex_freq = (cufftComplex *)malloc(size);
+    complex_data = (cufftComplex *)malloc(size);
 
     // Initialize input complex signal
     for (unsigned int i = 0; i < element_size; ++i) {
-        complex_samples[i].x = rand() / (float)RAND_MAX;
-        complex_samples[i].y = 0;
+        complex_data[i].x = rand() / (float)RAND_MAX;
+        complex_data[i].y = 0;
     }
 
     // Print input stuff
     if (PRINT_FLAG) {
         printf("Complex data...\n");
-        printf_cufft_cmplx_array(complex_samples, element_size);
+        printf_cufft_cmplx_array(complex_data, element_size);
     }
 
     // Create CUDA events
     CHECK_CUDA(cudaEventCreate(&start));
     CHECK_CUDA(cudaEventCreate(&stop));
 
+    // Allocate device memory for complex signal and output frequency
+    CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
+
+    cufftHandle plan1d_x, plan1d_y, plan1d_z, plan1d_w;
+    int n[1] = { (int)nx };
+    CHECK_CUFFT(cufftPlanMany(&plan1d_x, 1, n,       // 1D FFT of size nx
+                            NULL, ny * nz * nw, nz, // inembed, istride, idist
+                            NULL, ny * nz * nw, nx, // onembed, ostride, odist
+                            CUFFT_C2C, ny * nz * nw));
+    n[0] = (int)ny;
+    CHECK_CUFFT(cufftPlanMany(&plan1d_y, 1, n,       // 1D FFT of size ny
+                            NULL, nz * nw, ny, // inembed, istride, idist
+                            NULL, nz * nw, ny, // onembed, ostride, odist
+                            CUFFT_C2C, nx * nz * nw));
+    n[0] = (int)nz;
+    CHECK_CUFFT(cufftPlanMany(&plan1d_z, 1, n,       // 1D FFT of size nz
+                            NULL, nw, nz, // inembed, istride, idist
+                            NULL, nw, nz, // onembed, ostride, odist
+                            CUFFT_C2C, nx * ny * nw));
+    n[0] = (int)nw;
+    CHECK_CUFFT(cufftPlanMany(&plan1d_w, 1, n,       // 1D FFT of size nw
+                            NULL, 1, nw, // inembed, istride, idist
+                            NULL, 1, nw, // onembed, ostride, odist
+                            CUFFT_C2C, nx * ny * nz));
+
     // Record the start event
     CHECK_CUDA(cudaEventRecord(start, 0));
 
-    // Allocate device memory for complex signal and output frequency
-    CHECK_CUDA(cudaMalloc((void **)&d_complex_samples, size));
-    CHECK_CUDA(cudaMalloc((void **)&d_complex_freq, size));
-
     // Copy host memory to device
-    CHECK_CUDA(cudaMemcpy(d_complex_samples, complex_samples, size, cudaMemcpyHostToDevice));
+    CHECK_CUDA(cudaMemcpy(d_complex_data, complex_data, size, cudaMemcpyHostToDevice));
 
     // Perform FFT along each dimension sequentially
-    // execute_cufft1d(d_complex_samples, d_complex_freq, nx, ny * nz * nw, 1, nx);         // FFT along X
-    // execute_cufft1d(d_complex_freq, d_complex_freq, ny, nx * nz * nw, nx, ny);           // FFT along Y
-    // execute_cufft1d(d_complex_freq, d_complex_freq, nz, nx * ny * nw, nx * ny, nz);      // FFT along Z
-    // execute_cufft1d(d_complex_freq, d_complex_freq, nw, nx * ny * nz, nx * ny * nz, nw); // FFT along W
-    // int n[1];           // FFT length
-    // int stride = 1;    
-    // int dist;
-    // int embed[1];
-
-    // n[0] = nx; embed[0] = nx * ny * nz * nw; dist = ny * nz * nw;
-    // execute_cufft1d(d_complex_samples, d_complex_freq, n, embed, stride, dist, 1);                         // FFT along X
-    // n[0] = ny; embed[0] = ny * nz * nw; dist = nz * nw;
-    // execute_cufft1d(d_complex_freq, d_complex_freq, n, embed, stride, dist, nx);                        // FFT along Y
-    // n[0] = nz; embed[0] = nz * nw; dist = nw;
-    // execute_cufft1d(d_complex_freq, d_complex_freq, n, embed, stride, dist, nx * ny);                   // FFT along Z
-    // n[0] = nw; embed[0] = nw; dist = 1;
-    // execute_cufft1d(d_complex_freq, d_complex_freq, n, embed, stride, dist, nx * ny * nz);           // FFT along W
-
-
-    cufftHandle plan;
-    int n[4] = {nw, nz, ny, nx};
-    CHECK_CUFFT(cufftPlanMany(
-        &plan,
-        4, // Number of dimensions
-        n, // Dimensions of the array (in reverse order for CUFFT)
-        NULL, 1, 0,             // Input strides and embed
-        NULL, 1, 0,             // Output strides and embed
-        CUFFT_C2C,              // Transform type: complex-to-complex
-        1                       // Number of transforms (batch size)
-    ));
-
-    // Execute the forward 4D FFT
-    CHECK_CUFFT(cufftExecC2C(plan, d_complex_samples, d_complex_freq, CUFFT_FORWARD));
-
+    CHECK_CUFFT(cufftExecC2C(plan1d_x, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftExecC2C(plan1d_y, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftExecC2C(plan1d_z, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    // CHECK_CUFFT(cufftExecC2C(plan1d_w, d_complex_data, d_complex_data, CUFFT_FORWARD));
 
     // Retrieve the results into host memory
-    CHECK_CUDA(cudaMemcpy(complex_freq, d_complex_freq, size, cudaMemcpyDeviceToHost));
+    CHECK_CUDA(cudaMemcpy(complex_data, d_complex_data, size, cudaMemcpyDeviceToHost));
 
     // Record the stop event
     CHECK_CUDA(cudaEventRecord(stop, 0));
@@ -133,20 +108,21 @@ float run_test_cufft_4d_4x1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
-        printf_cufft_cmplx_array(complex_freq, element_size);
+        printf_cufft_cmplx_array(complex_data, element_size);
     }
 
     // Compute elapsed time
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
-    // printf("%.6f\n", elapsed_time * 1e-3);
 
     // Clean up
-    CHECK_CUDA(cudaFree(d_complex_freq));
-    CHECK_CUDA(cudaFree(d_complex_samples));
+    CHECK_CUFFT(cufftDestroy(plan1d_w));
+    CHECK_CUFFT(cufftDestroy(plan1d_z));
+    CHECK_CUFFT(cufftDestroy(plan1d_y));
+    CHECK_CUFFT(cufftDestroy(plan1d_x));
+    CHECK_CUDA(cudaFree(d_complex_data));
     CHECK_CUDA(cudaEventDestroy(start));
     CHECK_CUDA(cudaEventDestroy(stop));
-    free(complex_freq);
-    free(complex_samples);
+    free(complex_data);
 
     return elapsed_time * 1e-3;
 }

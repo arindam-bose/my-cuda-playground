@@ -45,11 +45,11 @@ float run_test_fftw_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
         printf_fftw_cmplx_array(complex_data, element_size);
     }
 
-    // Start time
-    start = clock();
-
     // Setup the FFT plan
     plan_fft = fftw_plan_dft_3d(nx, ny, nz, complex_data, complex_data, FFTW_FORWARD, FFTW_ESTIMATE);
+    
+    // Start time
+    start = clock();
 
     // Execute a complex-to-complex 3D FFT
     fftw_execute(plan_fft);

@@ -5,7 +5,7 @@
 #include <cufft.h>
 #include <math.h>
 
-#define PRINT_FLAG 0
+#define PRINT_FLAG 1
 #define NPRINTS 5  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
@@ -78,24 +78,30 @@ float run_test_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     CHECK_CUDA(cudaEventCreate(&start));
     CHECK_CUDA(cudaEventCreate(&stop));
 
+    // Allocate device memory for complex signal and output frequency
+    CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
+
     dim3 threads(8, 8, 8);
     dim3 blocks((nx + 7) / 8, (ny + 7) / 8, (nz + 7) / 8);
 
+    // Setup FFT plans
+    CHECK_CUDA(cudaMalloc((void **)&d_temp3d_xyz, size_xyz));
+    CHECK_CUFFT(cufftPlan3d(&plan3d_xyz, nx, ny, nz, CUFFT_C2C));
+    int n[1] = { (int)nw };
+    CHECK_CUFFT(cufftPlanMany(&plan1d_w, 1, n,       // 1D FFT of size nw
+                            NULL, 1, nw, // inembed, istride, idist
+                            NULL, 1, nw, // onembed, ostride, odist
+                            CUFFT_C2C, nx * ny * nz));
+
     // Record the start event
     CHECK_CUDA(cudaEventRecord(start, 0));
-
-    // Allocate device memory for complex signal and output frequency
-    CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
 
     // Copy host memory to device
     CHECK_CUDA(cudaMemcpy(d_complex_data, complex_data, size, cudaMemcpyHostToDevice));
 
     // -----------------------
     // 1. Perform 3D FFTs over each W slice (W batches of 3D volumes)
-    // -----------------------
-    // temp3d = (cufftComplex *)malloc(size_xyz);
-    CHECK_CUDA(cudaMalloc((void **)&d_temp3d_xyz, size_xyz));
-    CHECK_CUFFT(cufftPlan3d(&plan3d_xyz, nx, ny, nz, CUFFT_C2C));
+    // -----------------------    
     for (int w = 0; w < nw; ++w) {
         // Copy the W-slice into 3D matrices
         extract_xyz_slice<<<blocks, threads>>>(d_temp3d_xyz, d_complex_data, nx, ny, nz, nw, w);
@@ -108,20 +114,11 @@ float run_test_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     // -----------------------
     // 2. Perform 1D FFT along W dimension
     // -----------------------
-    // There are NX*NY*NZ such transforms (one for each (x,y,z) point)
-    int num_batches = nx * ny * nz;
-    int n[1] = { (int)nw };
-    CHECK_CUFFT(cufftPlanMany(&plan1d_w, 1, n,       // 1D FFT of size nw
-                            NULL, 1, nw, // inembed, istride, idist
-                            NULL, 1, nw, // onembed, ostride, odist
-                            CUFFT_C2C, num_batches));
-                            
     // Execute FFT on the batched data
     CHECK_CUFFT(cufftExecC2C(plan1d_w, d_complex_data, d_complex_data, CUFFT_FORWARD));
 
     // Copy results back to host
     CHECK_CUDA(cudaMemcpy(complex_data, d_complex_data, size, cudaMemcpyDeviceToHost));
-
 
     // Record the stop event
     CHECK_CUDA(cudaEventRecord(stop, 0));
@@ -137,12 +134,12 @@ float run_test_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
 
     // Cleanup
-    CHECK_CUDA(cudaEventDestroy(start));
-    CHECK_CUDA(cudaEventDestroy(stop));
     CHECK_CUFFT(cufftDestroy(plan3d_xyz));
     CHECK_CUFFT(cufftDestroy(plan1d_w));
     CHECK_CUDA(cudaFree(d_temp3d_xyz));
     CHECK_CUDA(cudaFree(d_complex_data));
+    CHECK_CUDA(cudaEventDestroy(start));
+    CHECK_CUDA(cudaEventDestroy(stop));
     free(complex_data);
 
     return elapsed_time * 1e-3;

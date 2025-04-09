@@ -45,11 +45,11 @@ float run_test_fftw_2d(unsigned int nx, unsigned int ny) {
         printf_fftw_cmplx_array(complex_data, element_size);
     }
 
-    // Start time
-    start = clock();
-
     // Setup the FFT plan
     plan = fftw_plan_dft_2d(nx, ny, complex_data, complex_data, FFTW_FORWARD, FFTW_ESTIMATE);
+
+    // Start time
+    start = clock();
 
     // Execute a complex-to-complex 2D FFT
     fftw_execute(plan);
@@ -69,6 +69,7 @@ float run_test_fftw_2d(unsigned int nx, unsigned int ny) {
     // Clean up
     fftw_destroy_plan(plan);
     fftw_free(complex_data);
+    fftw_cleanup();
 
     return elapsed_time;
 }

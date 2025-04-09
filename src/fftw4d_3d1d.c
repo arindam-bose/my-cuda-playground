@@ -45,13 +45,17 @@ float run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, u
         printf("Complex data...\n");
         printf_fftw_cmplx_array(complex_data, element_size);
     }
+
+    // Allocate memory and setup FFTs
+    tmp_3d = fftw_malloc(sizeof(fftw_complex) * nx * ny * nz);
+    plan3d = fftw_plan_dft_3d(nx, ny, nz, tmp_3d, tmp_3d, FFTW_FORWARD, FFTW_ESTIMATE);
+    tmp_1d = fftw_malloc(sizeof(fftw_complex) * nw);
+    plan1d = fftw_plan_dft_1d(nw, tmp_1d, tmp_1d, FFTW_FORWARD, FFTW_ESTIMATE);
     
     // Start time
     start = clock();
 
     // -------- 1. Perform 3D FFT for each W slice --------
-    tmp_3d = fftw_malloc(sizeof(fftw_complex) * nx * ny * nz);
-    plan3d = fftw_plan_dft_3d(nx, ny, nz, tmp_3d, tmp_3d, FFTW_FORWARD, FFTW_ESTIMATE);
     for (int w = 0; w < nw; ++w) {
         // Copy the W-slice into tmp_3d
         for (int x = 0; x < nx; ++x) {
@@ -79,9 +83,6 @@ float run_test_fftw_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, u
     }
 
     // -------- 2. Perform 1D FFT along W for each (x,y,z) --------
-    tmp_1d = fftw_malloc(sizeof(fftw_complex) * nw);
-    plan1d = fftw_plan_dft_1d(nw, tmp_1d, tmp_1d, FFTW_FORWARD, FFTW_ESTIMATE);
-
     for (int x = 0; x < nx; ++x) {
         for (int y = 0; y < ny; ++y) {
             for (int z = 0; z < nz; ++z) {
