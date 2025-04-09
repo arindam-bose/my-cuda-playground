@@ -65,8 +65,8 @@ ARGS_LIST=(
     "32x32x32x32"
     "64x64x64x64"
     "64x64x512x128"
-    # "64x64x512x1024"
-    # "128x128x128x128"
+    "64x64x512x1024"
+    "128x128x128x128"
 )
 
 # Define the executable name

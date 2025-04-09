@@ -5,7 +5,7 @@
 #include <cufft.h>
 #include <math.h>
 
-#define PRINT_FLAG 1
+#define PRINT_FLAG 0
 #define NPRINTS 5  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
@@ -18,36 +18,36 @@ void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
     }
 }
 
-__global__ void extract_xy_slice(cufftComplex* d_in, cufftComplex* d_out, int nx, int ny, int nz, int nw, int z, int w) {
+__global__ void extract_xy_slice(cufftComplex* d_out, cufftComplex* d_in, int nx, int ny, int nz, int nw, int z, int w) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
+
     if (x < nx && y < ny) {
-        int input_idx = (((x * ny + y) * nz + z) * nw) + w;
-        int output_idx = x * ny + y;
-        d_out[output_idx].x = d_in[input_idx].x;
-        d_out[output_idx].y = d_in[input_idx].y;
+        int in_idx = (((x * ny + y) * nz + z) * nw) + w;
+        int out_idx = x * ny + y;
+        d_out[out_idx] = d_in[in_idx];
     }
 }
 
-__global__ void extract_zw_slice(cufftComplex* d_in, cufftComplex* d_out, int nx, int ny, int nz, int nw, int x, int y) {
+__global__ void extract_zw_slice(cufftComplex* d_out, cufftComplex* d_in, int nx, int ny, int nz, int nw, int x, int y) {
     int z = blockIdx.x * blockDim.x + threadIdx.x;
     int w = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (z < nz && w < nw) {
-        int input_idx = (((x * ny + y) * nz + z) * nw) + w;
-        int output_idx = z * nw + w;
-        d_out[output_idx] = d_in[input_idx];
+        int in_idx = (((x * ny + y) * nz + z) * nw) + w;
+        int out_idx = z * nw + w;
+        d_out[out_idx] = d_in[in_idx];
     }
 }
 
 __global__ void write_xy_slice_back(cufftComplex* d_out, cufftComplex* d_in, int nx, int ny, int nz, int nw, int z, int w) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
+
     if (x < nx && y < ny) {
-        int output_idx = (((x * ny + y) * nz + z) * nw) + w;
-        int input_idx = x * ny + y;
-        d_out[output_idx].x = d_in[input_idx].x;
-        d_out[output_idx].y = d_in[input_idx].y;
+        int out_idx = (((x * ny + y) * nz + z) * nw) + w;
+        int in_idx = x * ny + y;
+        d_out[out_idx] = d_in[in_idx];
     }
 }
 
@@ -56,9 +56,9 @@ __global__ void write_zw_slice_back(cufftComplex* d_out, cufftComplex* d_in, int
     int w = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (z < nz && w < nw) {
-        int output_idx = (((x * ny + y) * nz + z) * nw) + w;
-        int input_idx = z * nw + w;
-        d_out[output_idx] = d_in[input_idx];
+        int out_idx = (((x * ny + y) * nz + z) * nw) + w;
+        int in_idx = z * nw + w;
+        d_out[out_idx] = d_in[in_idx];
     }
 }
 
@@ -121,7 +121,8 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
     for (int z = 0; z < nz; ++z) {
         for (int w = 0; w < nw; ++w) {
             // Extract 2D slice
-            extract_xy_slice<<<blocks, threads>>>(d_complex_data, d_temp2d_xy, nx, ny, nz, nw, z, w);
+            extract_xy_slice<<<blocks, threads>>>(d_temp2d_xy, d_complex_data, nx, ny, nz, nw, z, w);
+            // Perform 2D FFT
             CHECK_CUFFT(cufftExecC2C(plan2d_xy, d_temp2d_xy, d_temp2d_xy, CUFFT_FORWARD));
             // Copy back
             write_xy_slice_back<<<blocks, threads>>>(d_complex_data, d_temp2d_xy, nx, ny, nz, nw, z, w);
@@ -138,7 +139,8 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
     for (int x = 0; x < nx; ++x) {
         for (int y = 0; y < ny; ++y) {
             // Extract 2D slice
-            extract_zw_slice<<<blocks, threads>>>(d_complex_data, d_temp2d_zw, nx, ny, nz, nw, x, y);
+            extract_zw_slice<<<blocks, threads>>>(d_temp2d_zw, d_complex_data, nx, ny, nz, nw, x, y);
+            // Perform 2D FFT
             CHECK_CUFFT(cufftExecC2C(plan2d_zw, d_temp2d_zw, d_temp2d_zw, CUFFT_FORWARD));            
             // Copy back
             write_zw_slice_back<<<blocks, threads>>>(d_complex_data, d_temp2d_zw, nx, ny, nz, nw, x, y);
