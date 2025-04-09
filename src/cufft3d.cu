@@ -134,8 +134,11 @@ int main(int argc, char **argv) {
     run_test_cufft_3d(nx, ny, nz);
 
     float sum = 0.0;
+    float span_s = 0.0;
     for (unsigned int i = 0; i < niter; ++i) {
-        sum += run_test_cufft_3d(nx, ny, nz);
+        span_s = run_test_cufft_3d(nx, ny, nz);
+        if (PRINT_FLAG) printf("[%d]: %.6f s\n", i, span_s);
+        sum += span_s;
     }
     printf("%.6f\n", sum/(float)niter);
 
