@@ -1,4 +1,4 @@
-#include "../common/common.h"
+#include "../../common/common.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda_runtime.h>
@@ -17,24 +17,13 @@ void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
     }
 }
 
-void execute_cufft1d(cufftComplex *d_idata, cufftComplex *d_odata, int *dim, int *embed, int stride, int dist, int batch) {
-    cufftHandle plan;
-    CHECK_CUFFT(cufftPlanMany(&plan, 1, dim, 
-                                embed, stride, dist, 
-                                embed, stride, dist, 
-                                CUFFT_C2C, batch));
-
-    // Perform FFT
-    CHECK_CUFFT(cufftExecC2C(plan, d_idata, d_odata, CUFFT_FORWARD));
-    CHECK_CUFFT(cufftDestroy(plan));
-}
-
 float run_test_cufft_4d_4x1d(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
     srand(2025);
 
     // Declaration
     cufftComplex *complex_data;
     cufftComplex *d_complex_data;
+    cufftHandle plan1d_x, plan1d_y, plan1d_z, plan1d_w;
 
     unsigned int element_size = nx * ny * nz * nw;
     size_t size = sizeof(cufftComplex) * element_size;
@@ -64,24 +53,26 @@ float run_test_cufft_4d_4x1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     // Allocate device memory for complex signal and output frequency
     CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
 
-    cufftHandle plan1d_x, plan1d_y, plan1d_z, plan1d_w;
     int n[1] = { (int)nx };
-    int embed[4] = { (int)nx, (int)ny , (int)nz, (int)nw};
+    int embed[1] = { (int)nx };
     CHECK_CUFFT(cufftPlanMany(&plan1d_x, 1, n,       // 1D FFT of size nx
                             embed, ny * nz * nw, nz, // inembed, istride, idist
                             embed, ny * nz * nw, nx, // onembed, ostride, odist
                             CUFFT_C2C, ny * nz * nw));
     n[0] = (int)ny;
+    embed[0] = (int)ny;
     CHECK_CUFFT(cufftPlanMany(&plan1d_y, 1, n,       // 1D FFT of size ny
                             embed, nz * nw, ny, // inembed, istride, idist
                             embed, nz * nw, ny, // onembed, ostride, odist
                             CUFFT_C2C, nx * nz * nw));
     n[0] = (int)nz;
+    embed[0] = (int)nz;
     CHECK_CUFFT(cufftPlanMany(&plan1d_z, 1, n,       // 1D FFT of size nz
                             embed, nw, nz, // inembed, istride, idist
                             embed, nw, nz, // onembed, ostride, odist
                             CUFFT_C2C, nx * ny * nw));
     n[0] = (int)nw;
+    embed[0] = (int)nw;
     CHECK_CUFFT(cufftPlanMany(&plan1d_w, 1, n,       // 1D FFT of size nw
                             embed, 1, nw, // inembed, istride, idist
                             embed, 1, nw, // onembed, ostride, odist
@@ -97,7 +88,7 @@ float run_test_cufft_4d_4x1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     CHECK_CUFFT(cufftExecC2C(plan1d_x, d_complex_data, d_complex_data, CUFFT_FORWARD));
     CHECK_CUFFT(cufftExecC2C(plan1d_y, d_complex_data, d_complex_data, CUFFT_FORWARD));
     CHECK_CUFFT(cufftExecC2C(plan1d_z, d_complex_data, d_complex_data, CUFFT_FORWARD));
-    // CHECK_CUFFT(cufftExecC2C(plan1d_w, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftExecC2C(plan1d_w, d_complex_data, d_complex_data, CUFFT_FORWARD));
 
     // Retrieve the results into host memory
     CHECK_CUDA(cudaMemcpy(complex_data, d_complex_data, size, cudaMemcpyDeviceToHost));

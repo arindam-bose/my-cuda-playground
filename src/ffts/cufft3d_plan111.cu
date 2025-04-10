@@ -1,4 +1,4 @@
-#include "../common/common.h"
+#include "../../common/common.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda_runtime.h>
@@ -55,17 +55,19 @@ float run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
 
     // Setup the CUFFT plans
     int n[1] = { (int)nx };
-    int embed[3] = { (int)nx, (int)ny, (int)nz };
+    int embed[1] = { (int)nx };
     CHECK_CUFFT(cufftPlanMany(&plan1d_x, 1, n,          // 1D FFT of size nw
-                            embed, ny * nz, nx,      // inembed, istride, idist
-                            embed, ny * nz, nx,      // onembed, ostride, odist
-                            CUFFT_C2C, ny * nz));
+                            embed, ny * nz, 1,      // inembed, istride, idist
+                            embed, ny * nz, 1,      // onembed, ostride, odist
+                            CUFFT_C2C, ny * 1));
     n[0] = (int)ny;
+    embed[0] = (int)ny;
     CHECK_CUFFT(cufftPlanMany(&plan1d_y, 1, n,          // 1D FFT of size nw
-                            embed, nz, ny,      // inembed, istride, idist
-                            embed, nz, ny,      // onembed, ostride, odist
+                            embed, nz, 1,      // inembed, istride, idist
+                            embed, nz, 1,      // onembed, ostride, odist
                             CUFFT_C2C, nx * nz));
     n[0] = (int)nz;
+    embed[0] = (int)nz;
     CHECK_CUFFT(cufftPlanMany(&plan1d_z, 1, n,          // 1D FFT of size nw
                             embed, 1, nz,      // inembed, istride, idist
                             embed, 1, nz,      // onembed, ostride, odist

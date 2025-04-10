@@ -1,11 +1,11 @@
-#include "../common/common.h"
+#include "../../common/common.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda_runtime.h>
 #include <cufft.h>
 #include <math.h>
 
-#define PRINT_FLAG 0
+#define PRINT_FLAG 1
 #define NPRINTS 5  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
@@ -18,65 +18,15 @@ void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
     }
 }
 
-__global__ void extract_xy_slice(cufftComplex* d_out, cufftComplex* d_in, int nx, int ny, int nz, int nw, int z, int w) {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (x < nx && y < ny) {
-        int in_idx = (((x * ny + y) * nz + z) * nw) + w;
-        int out_idx = x * ny + y;
-        d_out[out_idx] = d_in[in_idx];
-    }
-}
-
-__global__ void extract_zw_slice(cufftComplex* d_out, cufftComplex* d_in, int nx, int ny, int nz, int nw, int x, int y) {
-    int z = blockIdx.x * blockDim.x + threadIdx.x;
-    int w = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (z < nz && w < nw) {
-        int in_idx = (((x * ny + y) * nz + z) * nw) + w;
-        int out_idx = z * nw + w;
-        d_out[out_idx] = d_in[in_idx];
-    }
-}
-
-__global__ void write_xy_slice_back(cufftComplex* d_out, cufftComplex* d_in, int nx, int ny, int nz, int nw, int z, int w) {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (x < nx && y < ny) {
-        int out_idx = (((x * ny + y) * nz + z) * nw) + w;
-        int in_idx = x * ny + y;
-        d_out[out_idx] = d_in[in_idx];
-    }
-}
-
-__global__ void write_zw_slice_back(cufftComplex* d_out, cufftComplex* d_in, int nx, int ny, int nz, int nw, int x, int y) {
-    int z = blockIdx.x * blockDim.x + threadIdx.x;
-    int w = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (z < nz && w < nw) {
-        int out_idx = (((x * ny + y) * nz + z) * nw) + w;
-        int in_idx = z * nw + w;
-        d_out[out_idx] = d_in[in_idx];
-    }
-}
-
 float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, unsigned int nw) {
     srand(2025);
 
     // Declaration
     cufftComplex *complex_data, *d_complex_data;
-    cufftComplex *d_temp2d_xy, *d_temp2d_zw;
     cufftHandle plan2d_xy, plan2d_zw;
 
     unsigned int element_size = nx * ny * nz * nw;
     size_t size = sizeof(cufftComplex) * element_size;
-
-    unsigned int element_size_xy = nx * ny;
-    size_t size_xy = sizeof(cufftComplex) * element_size_xy;
-    unsigned int element_size_zw = nz * nw;
-    size_t size_zw = sizeof(cufftComplex) * element_size_zw;
 
     cudaEvent_t start, stop;
     float elapsed_time;
@@ -103,13 +53,18 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
     // Allocate device memory for complex signal and output frequency
     CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
 
-    CHECK_CUDA(cudaMalloc((void **)&d_temp2d_xy, size_xy));
-    CHECK_CUFFT(cufftPlan2d(&plan2d_xy, nx, ny, CUFFT_C2C));
-    CHECK_CUDA(cudaMalloc((void **)&d_temp2d_zw, size_zw));
-    CHECK_CUFFT(cufftPlan2d(&plan2d_zw, nz, nw, CUFFT_C2C));
-
-    dim3 threads(16, 16);
-    dim3 blocks((nx + 15) / 16, (ny + 15) / 16);
+    int n_xy[2] = { (int)nx, (int)ny };
+    int embed_xy[2] = { (int)nx, (int)ny };
+    CHECK_CUFFT(cufftPlanMany(&plan2d_xy, 2, n_xy,       // 1D FFT of size nx
+                            embed_xy, nz * nw, 1, // inembed, istride, idist
+                            embed_xy, nz * nw, 1, // onembed, ostride, odist
+                            CUFFT_C2C, nz * nw));
+    int n_zw[2] = { (int)nz, (int)nw };
+    int embed_zw[2] = { (int)nz, (int)nw};
+    CHECK_CUFFT(cufftPlanMany(&plan2d_zw, 2, n_zw,       // 1D FFT of size ny
+                            embed_zw, 1, nz * nw, // inembed, istride, idist
+                            embed_zw, 1, nz * nw, // onembed, ostride, odist
+                            CUFFT_C2C, nx * ny));
 
     // Record the start event
     CHECK_CUDA(cudaEventRecord(start, 0));
@@ -117,37 +72,8 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
     // Copy host memory to device
     CHECK_CUDA(cudaMemcpy(d_complex_data, complex_data, size, cudaMemcpyHostToDevice));
 
-    // -----------------------------
-    // 1. 2D FFT in (X, Y) direction
-    // -----------------------------
-    // We'll perform NX x NY FFTs for each (Z,W) slice => NZ*NW batches
-    
-    for (int z = 0; z < nz; ++z) {
-        for (int w = 0; w < nw; ++w) {
-            // Extract 2D slice
-            extract_xy_slice<<<blocks, threads>>>(d_temp2d_xy, d_complex_data, nx, ny, nz, nw, z, w);
-            // Perform 2D FFT
-            CHECK_CUFFT(cufftExecC2C(plan2d_xy, d_temp2d_xy, d_temp2d_xy, CUFFT_FORWARD));
-            // Copy back
-            write_xy_slice_back<<<blocks, threads>>>(d_complex_data, d_temp2d_xy, nx, ny, nz, nw, z, w);
-        }
-    }
-
-    // ----------------------------------
-    // 2. 2D FFT in (Z, W) direction
-    // ----------------------------------
-    // We need to reinterpret the data layout: flatten (Z,W) for each (X,Y)
-    // We perform NZ x NW FFTs for each (X,Y) location => NX*NY batches
-    for (int x = 0; x < nx; ++x) {
-        for (int y = 0; y < ny; ++y) {
-            // Extract 2D slice
-            extract_zw_slice<<<blocks, threads>>>(d_temp2d_zw, d_complex_data, nx, ny, nz, nw, x, y);
-            // Perform 2D FFT
-            CHECK_CUFFT(cufftExecC2C(plan2d_zw, d_temp2d_zw, d_temp2d_zw, CUFFT_FORWARD));            
-            // Copy back
-            write_zw_slice_back<<<blocks, threads>>>(d_complex_data, d_temp2d_zw, nx, ny, nz, nw, x, y);
-        }
-    }
+    CHECK_CUFFT(cufftExecC2C(plan2d_xy, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftExecC2C(plan2d_zw, d_complex_data, d_complex_data, CUFFT_FORWARD));
 
     // Retrieve the results into host memory
     CHECK_CUDA(cudaMemcpy(complex_data, d_complex_data, size, cudaMemcpyDeviceToHost));
@@ -168,8 +94,6 @@ float run_test_cufft_4d_2d2d(unsigned int nx, unsigned int ny, unsigned int nz, 
     // Cleanup
     CHECK_CUFFT(cufftDestroy(plan2d_xy));
     CHECK_CUFFT(cufftDestroy(plan2d_zw));
-    CHECK_CUDA(cudaFree(d_temp2d_xy));
-    CHECK_CUDA(cudaFree(d_temp2d_zw));
     CHECK_CUDA(cudaFree(d_complex_data));
     CHECK_CUDA(cudaEventDestroy(start));
     CHECK_CUDA(cudaEventDestroy(stop));

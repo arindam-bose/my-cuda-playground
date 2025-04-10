@@ -1,4 +1,4 @@
-#include "../common/common.h"
+#include "../../common/common.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda_runtime.h>
@@ -23,7 +23,7 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     // Declaration
     cufftComplex *complex_data;
     cufftComplex *d_complex_data;
-    cufftHandle plan;
+    cufftHandle plan2d_xy;
 
     unsigned int element_size = nx * ny;
     size_t size = sizeof(cufftComplex) * element_size;
@@ -54,10 +54,9 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
 
     // Setup the CUFFT plan
-    // CHECK_CUFFT(cufftPlan2d(&plan, nx, ny, CUFFT_C2C));
     int n[2] = { (int)nx, (int)ny };
     int embed[2] = { (int)nx, (int)ny };
-    CHECK_CUFFT(cufftPlanMany(&plan, 2, n,       // 2D FFT of size nw
+    CHECK_CUFFT(cufftPlanMany(&plan2d_xy, 2, n,       // 2D FFT of size nw
                             embed, 1, nx * ny, // inembed, istride, idist
                             embed, 1, nx * ny, // onembed, ostride, odist
                             CUFFT_C2C, nx * ny));
@@ -69,7 +68,7 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     CHECK_CUDA(cudaMemcpy(d_complex_data, complex_data, size, cudaMemcpyHostToDevice));
 
     // Execute a complex-to-complex 2D FFT
-    CHECK_CUFFT(cufftExecC2C(plan, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftExecC2C(plan2d_xy, d_complex_data, d_complex_data, CUFFT_FORWARD));
 
     // Retrieve the results into host memory
     CHECK_CUDA(cudaMemcpy(complex_data, d_complex_data, size, cudaMemcpyDeviceToHost));
@@ -88,7 +87,7 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
 
     // Clean up
-    CHECK_CUFFT(cufftDestroy(plan));
+    CHECK_CUFFT(cufftDestroy(plan2d_xy));
     CHECK_CUDA(cudaFree(d_complex_data));
     CHECK_CUDA(cudaEventDestroy(start));
     CHECK_CUDA(cudaEventDestroy(stop));
