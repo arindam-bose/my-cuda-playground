@@ -4,8 +4,8 @@
 #include <cuda_runtime.h>
 #include <cufft.h>
 
-#define PRINT_FLAG 0
-#define NPRINTS 5  // print size
+#define PRINT_FLAG 1
+#define NPRINTS 16  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
     for (unsigned int i = 0; i < NPRINTS; ++i) {
@@ -17,15 +17,15 @@ void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
     }
 }
 
-float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
+float run_test_cufft_3d(unsigned int nx, unsigned int ny, unsigned int nz) {
     srand(2025);
 
     // Declaration
     cufftComplex *complex_data;
     cufftComplex *d_complex_data;
-    cufftHandle plan;
+    cufftHandle plan1d_x, plan1d_y, plan1d_z;
 
-    unsigned int element_size = nx * ny;
+    unsigned int element_size = nx * ny * nz;
     size_t size = sizeof(cufftComplex) * element_size;
 
     cudaEvent_t start, stop;
@@ -45,7 +45,7 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
         printf("Complex data...\n");
         printf_cufft_cmplx_array(complex_data, element_size);
     }
-
+    
     // Create CUDA events
     CHECK_CUDA(cudaEventCreate(&start));
     CHECK_CUDA(cudaEventCreate(&stop));
@@ -53,17 +53,33 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     // Allocate device memory for complex signal and output frequency
     CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
 
-    // Setup the CUFFT plan
-    CHECK_CUFFT(cufftPlan2d(&plan, nx, ny, CUFFT_C2C));
-
+    // Setup the CUFFT plans
+    int n[1] = { (int)nx };
+    int embed[3] = { (int)nx, (int)ny, (int)nz };
+    CHECK_CUFFT(cufftPlanMany(&plan1d_x, 1, n,          // 1D FFT of size nw
+                            embed, ny * nz, nx,      // inembed, istride, idist
+                            embed, ny * nz, nx,      // onembed, ostride, odist
+                            CUFFT_C2C, ny * nz));
+    n[0] = (int)ny;
+    CHECK_CUFFT(cufftPlanMany(&plan1d_y, 1, n,          // 1D FFT of size nw
+                            embed, nz, ny,      // inembed, istride, idist
+                            embed, nz, ny,      // onembed, ostride, odist
+                            CUFFT_C2C, nx * nz));
+    n[0] = (int)nz;
+    CHECK_CUFFT(cufftPlanMany(&plan1d_z, 1, n,          // 1D FFT of size nw
+                            embed, 1, nz,      // inembed, istride, idist
+                            embed, 1, nz,      // onembed, ostride, odist
+                            CUFFT_C2C, nx * ny));
     // Record the start event
     CHECK_CUDA(cudaEventRecord(start, 0));
 
     // Copy host memory to device
     CHECK_CUDA(cudaMemcpy(d_complex_data, complex_data, size, cudaMemcpyHostToDevice));
 
-    // Execute a complex-to-complex 2D FFT
-    CHECK_CUFFT(cufftExecC2C(plan, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    // Execute the forward 3D FFT (in-place computation)
+    CHECK_CUFFT(cufftExecC2C(plan1d_x, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftExecC2C(plan1d_y, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftExecC2C(plan1d_z, d_complex_data, d_complex_data, CUFFT_FORWARD));
 
     // Retrieve the results into host memory
     CHECK_CUDA(cudaMemcpy(complex_data, d_complex_data, size, cudaMemcpyDeviceToHost));
@@ -72,7 +88,6 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     CHECK_CUDA(cudaEventRecord(stop, 0));
     CHECK_CUDA(cudaEventSynchronize(stop));
 
-    // Print output stuff
     if (PRINT_FLAG) {
         printf("Fourier Coefficients...\n");
         printf_cufft_cmplx_array(complex_data, element_size);
@@ -82,7 +97,9 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
 
     // Clean up
-    CHECK_CUFFT(cufftDestroy(plan));
+    CHECK_CUFFT(cufftDestroy(plan1d_x));
+    CHECK_CUFFT(cufftDestroy(plan1d_y));
+    CHECK_CUFFT(cufftDestroy(plan1d_z));
     CHECK_CUDA(cudaFree(d_complex_data));
     CHECK_CUDA(cudaEventDestroy(start));
     CHECK_CUDA(cudaEventDestroy(stop));
@@ -93,27 +110,28 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
 
 
 int main(int argc, char **argv) {
-    if (argc != 4) {
-        printf("Error: This program requires exactly 3 command-line arguments.\n");
-        printf("       %s <arg0> <arg1> <arg2>\n", argv[0]);
-        printf("       arg0, arg1: FFT lengths in 2D\n");
-        printf("       arg2: Number of iterations\n");
-        printf("       e.g.: %s 64 64 5\n", argv[0]);
+    if (argc != 5) {
+        printf("Error: This program requires exactly 4 command-line arguments.\n");
+        printf("       %s <arg0> <arg1> <arg2> <arg3>\n", argv[0]);
+        printf("       arg0, arg1, arg2: FFT lengths in 3D\n");
+        printf("       arg3: Number of iterations\n");
+        printf("       e.g.: %s 64 64 64 5\n", argv[0]);
         return -1;
     }
 
     unsigned int nx = atoi(argv[1]);
     unsigned int ny = atoi(argv[2]);
-    unsigned int niter = atoi(argv[3]);
+    unsigned int nz = atoi(argv[3]);
+    unsigned int niter = atoi(argv[4]);
 
     // Discard the first time running. It apparantly does some extra work during first time
     // JIT??
-    run_test_cufft_2d(nx, ny);
+    run_test_cufft_3d(nx, ny, nz);
 
     float sum = 0.0;
     float span_s = 0.0;
     for (unsigned int i = 0; i < niter; ++i) {
-        span_s = run_test_cufft_2d(nx, ny);
+        span_s = run_test_cufft_3d(nx, ny, nz);
         if (PRINT_FLAG) printf("[%d]: %.6f s\n", i, span_s);
         sum += span_s;
     }

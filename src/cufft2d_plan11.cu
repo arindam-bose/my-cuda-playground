@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 #include <cufft.h>
 
-#define PRINT_FLAG 0
+#define PRINT_FLAG 1
 #define NPRINTS 5  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
@@ -23,7 +23,7 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     // Declaration
     cufftComplex *complex_data;
     cufftComplex *d_complex_data;
-    cufftHandle plan;
+    cufftHandle plan1d_x, plan1d_y;
 
     unsigned int element_size = nx * ny;
     size_t size = sizeof(cufftComplex) * element_size;
@@ -53,8 +53,18 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     // Allocate device memory for complex signal and output frequency
     CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
 
-    // Setup the CUFFT plan
-    CHECK_CUFFT(cufftPlan2d(&plan, nx, ny, CUFFT_C2C));
+    // Setup the CUFFT plans
+    int n[1] = { (int)nx };
+    int embed[2] = { (int)nx, (int)ny };
+    CHECK_CUFFT(cufftPlanMany(&plan1d_x, 1, n,          // 1D FFT of size nw
+                            embed, ny, 1,      // inembed, istride, idist
+                            embed, ny, 1,      // onembed, ostride, odist
+                            CUFFT_C2C, ny));
+    n[0] = (int)ny;
+    CHECK_CUFFT(cufftPlanMany(&plan1d_y, 1, n,          // 1D FFT of size nw
+                            embed, 1, ny,      // inembed, istride, idist
+                            embed, 1, ny,      // onembed, ostride, odist
+                            CUFFT_C2C, nx));
 
     // Record the start event
     CHECK_CUDA(cudaEventRecord(start, 0));
@@ -63,7 +73,8 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     CHECK_CUDA(cudaMemcpy(d_complex_data, complex_data, size, cudaMemcpyHostToDevice));
 
     // Execute a complex-to-complex 2D FFT
-    CHECK_CUFFT(cufftExecC2C(plan, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftExecC2C(plan1d_x, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftExecC2C(plan1d_y, d_complex_data, d_complex_data, CUFFT_FORWARD));
 
     // Retrieve the results into host memory
     CHECK_CUDA(cudaMemcpy(complex_data, d_complex_data, size, cudaMemcpyDeviceToHost));
@@ -82,7 +93,8 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
 
     // Clean up
-    CHECK_CUFFT(cufftDestroy(plan));
+    CHECK_CUFFT(cufftDestroy(plan1d_x));
+    CHECK_CUFFT(cufftDestroy(plan1d_y));
     CHECK_CUDA(cudaFree(d_complex_data));
     CHECK_CUDA(cudaEventDestroy(start));
     CHECK_CUDA(cudaEventDestroy(stop));

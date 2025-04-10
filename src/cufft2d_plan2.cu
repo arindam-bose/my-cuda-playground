@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 #include <cufft.h>
 
-#define PRINT_FLAG 0
+#define PRINT_FLAG 1
 #define NPRINTS 5  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
@@ -54,7 +54,13 @@ float run_test_cufft_2d(unsigned int nx, unsigned int ny) {
     CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
 
     // Setup the CUFFT plan
-    CHECK_CUFFT(cufftPlan2d(&plan, nx, ny, CUFFT_C2C));
+    // CHECK_CUFFT(cufftPlan2d(&plan, nx, ny, CUFFT_C2C));
+    int n[2] = { (int)nx, (int)ny };
+    int embed[2] = { (int)nx, (int)ny };
+    CHECK_CUFFT(cufftPlanMany(&plan, 2, n,       // 2D FFT of size nw
+                            embed, 1, nx * ny, // inembed, istride, idist
+                            embed, 1, nx * ny, // onembed, ostride, odist
+                            CUFFT_C2C, nx * ny));
 
     // Record the start event
     CHECK_CUDA(cudaEventRecord(start, 0));

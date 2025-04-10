@@ -66,24 +66,25 @@ float run_test_cufft_4d_4x1d(unsigned int nx, unsigned int ny, unsigned int nz, 
 
     cufftHandle plan1d_x, plan1d_y, plan1d_z, plan1d_w;
     int n[1] = { (int)nx };
+    int embed[4] = { (int)nx, (int)ny , (int)nz, (int)nw};
     CHECK_CUFFT(cufftPlanMany(&plan1d_x, 1, n,       // 1D FFT of size nx
-                            NULL, ny * nz * nw, nz, // inembed, istride, idist
-                            NULL, ny * nz * nw, nx, // onembed, ostride, odist
+                            embed, ny * nz * nw, nz, // inembed, istride, idist
+                            embed, ny * nz * nw, nx, // onembed, ostride, odist
                             CUFFT_C2C, ny * nz * nw));
     n[0] = (int)ny;
     CHECK_CUFFT(cufftPlanMany(&plan1d_y, 1, n,       // 1D FFT of size ny
-                            NULL, nz * nw, ny, // inembed, istride, idist
-                            NULL, nz * nw, ny, // onembed, ostride, odist
+                            embed, nz * nw, ny, // inembed, istride, idist
+                            embed, nz * nw, ny, // onembed, ostride, odist
                             CUFFT_C2C, nx * nz * nw));
     n[0] = (int)nz;
     CHECK_CUFFT(cufftPlanMany(&plan1d_z, 1, n,       // 1D FFT of size nz
-                            NULL, nw, nz, // inembed, istride, idist
-                            NULL, nw, nz, // onembed, ostride, odist
+                            embed, nw, nz, // inembed, istride, idist
+                            embed, nw, nz, // onembed, ostride, odist
                             CUFFT_C2C, nx * ny * nw));
     n[0] = (int)nw;
     CHECK_CUFFT(cufftPlanMany(&plan1d_w, 1, n,       // 1D FFT of size nw
-                            NULL, 1, nw, // inembed, istride, idist
-                            NULL, 1, nw, // onembed, ostride, odist
+                            embed, 1, nw, // inembed, istride, idist
+                            embed, 1, nw, // onembed, ostride, odist
                             CUFFT_C2C, nx * ny * nz));
 
     // Record the start event

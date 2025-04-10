@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 #include <cufft.h>
 
-#define PRINT_FLAG 0
+#define PRINT_FLAG 1
 #define NPRINTS 5  // print size
 #define IFFT_FLAG 0
 
