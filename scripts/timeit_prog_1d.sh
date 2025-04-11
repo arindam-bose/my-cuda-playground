@@ -10,12 +10,12 @@ elif [ "$1" == "cufft" ]; then
     echo "Generating binary for cufft"
     PROGRAM=cufft1d
     ARCH="DUMMY"
-    nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
+    nvcc src/ffts/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
 elif [ "$1" == "fftw" ]; then
     echo "Generating binary for fftw"
     PROGRAM=fftw1d
     ARCH=$(uname -m)
-    gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
+    gcc src/ffts/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
 else
     echo "First argument should be {cufft|fftw}"
     exit 2

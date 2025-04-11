@@ -10,36 +10,36 @@ if [ -z "$1" ]; then
     echo "     $0 fftw31" >&2
     echo "     $0 fftw22" >&2
     exit 2
-elif [ "$1" == "cufft4" ]; then
+elif [ "$1" == "cufft1111" ]; then
     echo "Generating binary for cufft4"
-    PROGRAM=cufft4d_4x1d
+    PROGRAM=cufft4d_1111
     ARCH="DUMMY"
-    nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
+    nvcc src/ffts/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
 elif [ "$1" == "cufft31" ]; then
     echo "Generating binary for cufft31"
-    PROGRAM=cufft4d_3d1d
+    PROGRAM=cufft4d_31
     ARCH="DUMMY"
-    nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
+    nvcc src/ffts/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
 elif [ "$1" == "cufft22" ]; then
     echo "Generating binary for cufft22"
-    PROGRAM=cufft4d_2d2d
+    PROGRAM=cufft4d_22
     ARCH="DUMMY"
-    nvcc src/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
+    nvcc src/ffts/$PROGRAM.cu -o build/$PROGRAM --ptxas-options=-v --use_fast_math -lcufft
 elif [ "$1" == "fftw" ]; then
     echo "Generating binary for fftw"
     PROGRAM=fftw4d
     ARCH=$(uname -m)
-    gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
+    gcc src/ffts/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
 elif [ "$1" == "fftw31" ]; then
     echo "Generating binary for fftw"
     PROGRAM=fftw4d_3d1d
     ARCH=$(uname -m)
-    gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
+    gcc src/ffts/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
 elif [ "$1" == "fftw22" ]; then
     echo "Generating binary for fftw"
     PROGRAM=fftw4d_2d2d
     ARCH=$(uname -m)
-    gcc src/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
+    gcc src/ffts/$PROGRAM.c -o build/$PROGRAM -lfftw3 -lm
 else
     echo "First argument should be {cufft4|cufft31|cufft22|fftw|fftw31|fftw22}"
     exit 2
@@ -65,7 +65,7 @@ ARGS_LIST=(
     "32x32x32x32"
     "64x64x64x64"
     "64x64x512x128"
-    "64x64x512x1024"
+    "64x64x512x256"
     "128x128x128x128"
 )
 

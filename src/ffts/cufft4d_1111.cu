@@ -1,10 +1,11 @@
 #include "../../common/common.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <cuda_runtime.h>
+#include <cuda_runtime.h> 
 #include <cufft.h>
+#include <math.h>
 
-#define PRINT_FLAG 1
+#define PRINT_FLAG 0
 #define NPRINTS 5  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
@@ -56,20 +57,20 @@ float run_test_cufft_4d_4x1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     int n[1] = { (int)nx };
     int embed[1] = { (int)nx };
     CHECK_CUFFT(cufftPlanMany(&plan1d_x, 1, n,       // 1D FFT of size nx
-                            embed, ny * nz * nw, nz, // inembed, istride, idist
-                            embed, ny * nz * nw, nx, // onembed, ostride, odist
+                            embed, ny * nz * nw, 1, // inembed, istride, idist
+                            embed, ny * nz * nw, 1, // onembed, ostride, odist
                             CUFFT_C2C, ny * nz * nw));
     n[0] = (int)ny;
     embed[0] = (int)ny;
     CHECK_CUFFT(cufftPlanMany(&plan1d_y, 1, n,       // 1D FFT of size ny
-                            embed, nz * nw, ny, // inembed, istride, idist
-                            embed, nz * nw, ny, // onembed, ostride, odist
+                            embed, nz * nw, 1, // inembed, istride, idist
+                            embed, nz * nw, 1, // onembed, ostride, odist
                             CUFFT_C2C, nx * nz * nw));
     n[0] = (int)nz;
     embed[0] = (int)nz;
     CHECK_CUFFT(cufftPlanMany(&plan1d_z, 1, n,       // 1D FFT of size nz
-                            embed, nw, nz, // inembed, istride, idist
-                            embed, nw, nz, // onembed, ostride, odist
+                            embed, nw, 1, // inembed, istride, idist
+                            embed, nw, 1, // onembed, ostride, odist
                             CUFFT_C2C, nx * ny * nw));
     n[0] = (int)nw;
     embed[0] = (int)nw;
