@@ -5,7 +5,7 @@
 #include <cufft.h>
 #include <math.h>
 
-#define PRINT_FLAG 0
+#define PRINT_FLAG 1
 #define NPRINTS 5  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
@@ -87,9 +87,13 @@ float run_test_cufft_4d_4x1d(unsigned int nx, unsigned int ny, unsigned int nz, 
 
     // Perform FFT along each dimension sequentially
     CHECK_CUFFT(cufftExecC2C(plan1d_x, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftDestroy(plan1d_x));
     CHECK_CUFFT(cufftExecC2C(plan1d_y, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftDestroy(plan1d_y));
     CHECK_CUFFT(cufftExecC2C(plan1d_z, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftDestroy(plan1d_z));
     CHECK_CUFFT(cufftExecC2C(plan1d_w, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftDestroy(plan1d_w));
 
     // Retrieve the results into host memory
     CHECK_CUDA(cudaMemcpy(complex_data, d_complex_data, size, cudaMemcpyDeviceToHost));
@@ -108,10 +112,6 @@ float run_test_cufft_4d_4x1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
 
     // Clean up
-    CHECK_CUFFT(cufftDestroy(plan1d_w));
-    CHECK_CUFFT(cufftDestroy(plan1d_z));
-    CHECK_CUFFT(cufftDestroy(plan1d_y));
-    CHECK_CUFFT(cufftDestroy(plan1d_x));
     CHECK_CUDA(cudaFree(d_complex_data));
     CHECK_CUDA(cudaEventDestroy(start));
     CHECK_CUDA(cudaEventDestroy(stop));
@@ -142,8 +142,11 @@ int main(int argc, char **argv) {
     run_test_cufft_4d_4x1d(nx, ny, nz, nw);
 
     float sum = 0.0;
+    float span_s = 0.0;
     for (unsigned int i = 0; i < niter; ++i) {
-        sum += run_test_cufft_4d_4x1d(nx, ny, nz, nw);
+        span_s = run_test_cufft_4d_4x1d(nx, ny, nz, nw);
+        if (PRINT_FLAG) printf("[%d]: %.6f s\n", i, span_s);
+        sum += span_s;
     }
     printf("%.6f\n", sum/(float)niter);
 
