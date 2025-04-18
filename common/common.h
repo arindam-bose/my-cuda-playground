@@ -16,7 +16,7 @@
 #define CHECK_CUFFT(call)                                                      \
 {                                                                              \
     cufftResult error;                                                         \
-    if ( (error = (call)) != CUFFT_SUCCESS)                                      \
+    if ( (error = (call)) != CUFFT_SUCCESS)                                    \
     {                                                                          \
         fprintf(stderr, "Got CUFFT error %d at %s:%d\n", error, __FILE__,      \
                 __LINE__);                                                     \

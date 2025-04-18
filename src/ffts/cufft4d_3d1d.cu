@@ -82,7 +82,7 @@ float run_test_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     CHECK_CUDA(cudaMalloc((void **)&d_complex_data, size));
 
     dim3 threads(8, 8, 8);
-    dim3 blocks((nx + 7) / 8, (ny + 7) / 8, (nz + 7) / 8);
+    dim3 blocks((nx + threads.x - 1) / threads.x, (ny + threads.y - 1) / threads.y, (nz + threads.z - 1) / threads.z);
 
     // Setup FFT plans
     CHECK_CUDA(cudaMalloc((void **)&d_temp3d_xyz, size_xyz));
