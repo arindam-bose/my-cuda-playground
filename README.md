@@ -6,7 +6,7 @@ sudo install python3-virtualenv
 wget https://www.fftw.org/fftw-3.3.10.tar.gz
 tar -xvzf fftw-3.3.10.tar.gz
 cd fftw-3.3.10
-./configure
+./configure --enable-mpi
 make
 sudo make install
 
@@ -38,5 +38,7 @@ Build cuda_11.4.r11.4/compiler.31964100_0
 
 ## Run GCC individual program
 ```gcc -o build/module src/module.c -lfftw3 -lm```
+
+```mpicc -o build/fftw_mpi src/ffts/fftw_mpi.c -lfftw3 -lm -lfftw3_mpi```
 
 python ./scripts/plot_et.py 
