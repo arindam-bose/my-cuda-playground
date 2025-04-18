@@ -8,13 +8,14 @@ tar -xvzf fftw-3.3.10.tar.gz
 cd fftw-3.3.10
 ./configure
 make
-make install
+sudo make install
 
 git clone https://github.com/arindam-bose/my-cuda-playground
 cd my-python-playground
 virtualenv venv -p /usr/bin/python3
 source venv/bin/activate
 pip install -r requirements.txt
+mkdir build
 ```
 ## Versions
 ### NVCC

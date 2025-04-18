@@ -5,7 +5,7 @@
 #include <cufft.h>
 #include <math.h>
 
-#define PRINT_FLAG 0
+#define PRINT_FLAG 1
 #define NPRINTS 5  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
@@ -73,7 +73,9 @@ float run_test_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     CHECK_CUDA(cudaMemcpy(d_complex_data, complex_data, size, cudaMemcpyHostToDevice));
 
     CHECK_CUFFT(cufftExecC2C(plan3d_xyz, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftDestroy(plan3d_xyz));
     CHECK_CUFFT(cufftExecC2C(plan1d_w, d_complex_data, d_complex_data, CUFFT_FORWARD));
+    CHECK_CUFFT(cufftDestroy(plan1d_w));
 
     // Copy results back to host
     CHECK_CUDA(cudaMemcpy(complex_data, d_complex_data, size, cudaMemcpyDeviceToHost));
@@ -92,8 +94,6 @@ float run_test_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, 
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
 
     // Cleanup
-    CHECK_CUFFT(cufftDestroy(plan3d_xyz));
-    CHECK_CUFFT(cufftDestroy(plan1d_w));
     CHECK_CUDA(cudaFree(d_complex_data));
     CHECK_CUDA(cudaEventDestroy(start));
     CHECK_CUDA(cudaEventDestroy(stop));
