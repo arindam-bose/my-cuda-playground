@@ -5,7 +5,7 @@
 #include <cufft.h>
 #include <math.h>
 
-#define PRINT_FLAG 1
+#define PRINT_FLAG 0
 #define NPRINTS 5  // print size
 
 void printf_cufft_cmplx_array(cufftComplex *complex_array, unsigned int size) {
