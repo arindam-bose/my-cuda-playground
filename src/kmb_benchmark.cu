@@ -41,9 +41,9 @@ float run_kmb_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, u
     int n_xyz[3] = { (int)NX, (int)NY, (int)NZ };
     int embed[3] = { (int)NX, (int)NY, (int)NZ };
     CHECK_CUFFT(cufftPlanMany(&plan3d_xyz, 3, n_xyz,          // 3D FFT of size nx*ny*nz
-                            embed, NW, 1,     // inembed, istride, idist
-                            embed, NW, 1,     // onembed, ostride, odist
-                            CUFFT_C2C, NW));
+                            embed, NW/2, 1,     // inembed, istride, idist
+                            embed, NW/2, 1,     // onembed, ostride, odist
+                            CUFFT_C2C, NW/2));
 
     // 1. Generate a 4D dataset
     // Initialize input complex signal
@@ -63,11 +63,9 @@ float run_kmb_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, u
 
     // 2. Perform the 1D FFT along the 4th dimension
     CHECK_CUFFT(cufftExecC2C(plan1d_w, d_complex_data, d_complex_data, CUFFT_FORWARD));
-    CHECK_CUFFT(cufftDestroy(plan1d_w));
 
     // 3. Perform the 3D FFT along the rest of the dimensions
     CHECK_CUFFT(cufftExecC2C(plan3d_xyz, d_complex_data, d_complex_data, CUFFT_FORWARD));
-    CHECK_CUFFT(cufftDestroy(plan3d_xyz));
 
     // Copy results back to host
     CHECK_CUDA(cudaMemcpy(h_complex_data, d_complex_data, size, cudaMemcpyDeviceToHost));
@@ -80,6 +78,8 @@ float run_kmb_cufft_4d_3d1d(unsigned int nx, unsigned int ny, unsigned int nz, u
     CHECK_CUDA(cudaEventElapsedTime(&elapsed_time, start, stop));
 
     // Cleanup
+    CHECK_CUFFT(cufftDestroy(plan1d_w));
+    CHECK_CUFFT(cufftDestroy(plan3d_xyz));
     CHECK_CUDA(cudaFree(d_complex_data));
     CHECK_CUDA(cudaEventDestroy(start));
     CHECK_CUDA(cudaEventDestroy(stop));
